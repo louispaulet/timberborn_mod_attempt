@@ -1,0 +1,8 @@
+{
+  "Name": "Hello World",
+  "Version": "0.1.0",
+  "Id": "LouisPaulet.HelloWorld",
+  "MinimumGameVersion": "1.0.0.0",
+  "Description": "Shows a Hello World popup when a settlement loads.",
+  "RequiredMods": []
+}
