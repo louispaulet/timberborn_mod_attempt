@@ -216,3 +216,40 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local project tools
+.tools/
+
+# .NET/C# build outputs
+bin/
+obj/
+*.dll
+*.pdb
+*.mdb
+*.deps.json
+*.runtimeconfig.json
+
+# Timberborn mod build/install outputs
+dist/
+*.zip
+*.log
+logs/
+screenshots/
+verification/
+Player.log
+Player-prev.log
+
+# Unity local/generated state
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+Recordings/
+*.suo
+*.user
+*.pidb
+*.booproj
