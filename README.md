@@ -22,6 +22,8 @@ make build
 make package
 make install
 make launch
+make up
+make down
 make logs
 make clean
 scripts/timberborn-ai status
@@ -185,10 +187,16 @@ Deterministic context tools intentionally do simple arithmetic in the mod. For e
 For local manual testing without starting a full Pi session, run:
 
 ```sh
-scripts/timberborn-pi-companion
+make up
 ```
 
 The companion keeps Timberborn foregrounded, watches the interaction state, posts a four-button menu when `Ask AI` is pressed, runs deterministic tool choices such as water readiness or game context, records the tool result, and posts the next menu.
+
+Stop it with:
+
+```sh
+make down
+```
 
 ## Verify In Timberborn
 

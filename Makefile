@@ -4,6 +4,8 @@ GAME_APP := /Users/louispaulet/Library/Application Support/Steam/steamapps/commo
 MANAGED_DIR := $(GAME_APP)/Contents/Resources/Data/Managed
 MODS_DIR := /Users/louispaulet/Documents/Timberborn/Mods
 PLAYER_LOG := /Users/louispaulet/Library/Logs/Mechanistry/Timberborn/Player.log
+LOOP_PID := $(CURDIR)/.tools/timberborn-pi-companion.pid
+LOOP_LOG := $(CURDIR)/logs/timberborn-pi-companion.log
 
 MOD_NAME := AiHarness
 PROJECT := src/AiHarness.Mod/AiHarness.Mod.csproj
@@ -13,7 +15,7 @@ PACKAGE_DIR := dist/AiHarness
 LOCAL_DOTNET := $(CURDIR)/.tools/dotnet/dotnet
 DOTNET := $(shell command -v dotnet 2>/dev/null || printf '%s' '$(LOCAL_DOTNET)')
 
-.PHONY: verify-env bootstrap build package install launch logs clean
+.PHONY: verify-env bootstrap build package install launch up down logs clean
 
 verify-env:
 	@test -d "$(GAME_APP)" || (echo "Timberborn app not found: $(GAME_APP)" && exit 1)
@@ -62,6 +64,32 @@ launch:
 	open -a Steam
 	sleep 2
 	open steam://run/1062090
+
+up:
+	@mkdir -p "$(CURDIR)/.tools" "$(CURDIR)/logs"
+	@if [ -f "$(LOOP_PID)" ] && kill -0 "$$(cat "$(LOOP_PID)")" >/dev/null 2>&1; then \
+		echo "Timberborn Pi companion already running with PID $$(cat "$(LOOP_PID)")"; \
+	else \
+		if [ -f "$(LOOP_PID)" ]; then rm -f "$(LOOP_PID)"; fi; \
+		nohup "$(CURDIR)/scripts/timberborn-pi-companion" > "$(LOOP_LOG)" 2>&1 & \
+		echo $$! > "$(LOOP_PID)"; \
+		echo "Started Timberborn Pi companion with PID $$(cat "$(LOOP_PID)")"; \
+		echo "Log: $(LOOP_LOG)"; \
+	fi
+
+down:
+	@if [ -f "$(LOOP_PID)" ]; then \
+		pid="$$(cat "$(LOOP_PID)")"; \
+		if kill -0 "$$pid" >/dev/null 2>&1; then \
+			kill "$$pid"; \
+			echo "Stopped Timberborn Pi companion with PID $$pid"; \
+		else \
+			echo "Timberborn Pi companion PID $$pid is not running"; \
+		fi; \
+		rm -f "$(LOOP_PID)"; \
+	else \
+		echo "Timberborn Pi companion is not running (no PID file)"; \
+	fi
 
 logs:
 	@test -f "$(PLAYER_LOG)" || (echo "Player log not found: $(PLAYER_LOG)" && exit 1)
