@@ -29,6 +29,7 @@ make clean
 scripts/timberborn-ai status
 scripts/timberborn-ai place-water-tank
 scripts/timberborn-ai interaction-request --topic "current situation"
+scripts/timberborn-ai interaction-refresh
 scripts/timberborn-ai interaction
 scripts/timberborn-ai water-readiness
 scripts/timberborn-pi-companion
@@ -81,6 +82,7 @@ GET|POST /api/ai-harness/place-building?template=water_tank&x=...&y=...&z=...&or
 GET /api/ai-harness/interaction
 GET|POST /api/ai-harness/interaction/request?topic=...
 GET|POST /api/ai-harness/interaction/show?interactionId=...&menuId=...&question=...&label1=...&kind1=...&payload1=... through label4/kind4/payload4
+GET|POST /api/ai-harness/interaction/refresh
 GET|POST /api/ai-harness/interaction/answer?button=1|2|3|4
 GET|POST /api/ai-harness/interaction/tool-result?tool=...&ok=true|false&summary=...
 GET|POST /api/ai-harness/interaction/clear
@@ -111,6 +113,7 @@ scripts/timberborn-ai place-stairs
 scripts/timberborn-ai place-platform
 scripts/timberborn-ai place-building SmallTank.Folktails --x 32 --y 29 --z 3
 scripts/timberborn-ai interaction-request --topic "current situation"
+scripts/timberborn-ai interaction-refresh
 scripts/timberborn-ai interaction-show --question "What should Pi do?" \
   --label "Water check" --kind tool --payload timberborn_water_readiness \
   --label "Build tips" --kind menu --payload building.pathing \
@@ -154,13 +157,14 @@ pi -p --no-session --approve \
 
 ## Four-Button Pi Loop
 
-When the mod is active in a settlement, it adds an `Ask AI` HUD module with four numbered answer buttons. Timberborn never sends freeform text to Pi. The game records a request or one of the four answers; a local Pi companion session polls the harness, chooses deterministic tools when needed, and posts the next four-option menu.
+When the mod is active in a settlement, it adds an `Ask AI` HUD module with four numbered answer buttons and a recycle-icon refresh button. Timberborn never sends freeform text to Pi. The game records a request, refresh request, or one of the four answers; a local Pi companion session polls the harness, chooses deterministic tools when needed, and posts the next four-option menu.
 
 Interaction states are:
 
 ```text
 idle -> requested -> menuShown -> answerSubmitted
 idle -> requested -> menuShown -> toolRequested -> toolCompleted
+menuShown -> refreshRequested -> menuShown
 ```
 
 Menus posted by Pi must have exactly four options. Non-confirmation menus must include at least one deterministic tool option, one navigation/menu option, and one back/cancel/no option. Confirmation menus must include yes and no before any mutating action such as placing a building.
@@ -190,7 +194,7 @@ For local manual testing without starting a full Pi session, run:
 make up
 ```
 
-The companion keeps Timberborn foregrounded, watches the interaction state, posts a four-button menu when `Ask AI` is pressed, runs deterministic tool choices such as water readiness or game context, records the tool result, and posts the next menu.
+The companion keeps Timberborn foregrounded, watches the interaction state, posts a four-button menu when `Ask AI` is pressed, rotates to alternate four-choice menus when refresh is requested, runs deterministic tool choices such as water readiness or game context, records the tool result, and posts the next menu.
 
 Stop it with:
 
@@ -211,10 +215,11 @@ make down
 9. Run `scripts/timberborn-ai place-water-tank` and confirm it places `SmallTank.Folktails` as a construction site.
 10. Run `scripts/timberborn-ai interaction-request --topic "current situation"` and confirm the HUD shows a requested Pi interaction.
 11. Run `scripts/timberborn-ai interaction-show` with four labels/kinds, then answer using one of the four in-game HUD buttons or `scripts/timberborn-ai interaction-answer 1`.
-12. Run `scripts/timberborn-ai water-readiness` and confirm deterministic water metrics are returned.
-13. Run the Pi one-shot command above and confirm Pi reports a placed water tank.
-14. For final proof, capture screenshots showing the four-button HUD, a Pi-posted four-option menu, a submitted answer, and a tool-result state.
-15. Check logs with `make logs`; the mod should log its startup, interaction, and command messages in `Player.log`.
+12. Run `scripts/timberborn-ai interaction-refresh` or click the recycle-icon HUD button, then confirm the companion posts a refreshed four-choice menu.
+13. Run `scripts/timberborn-ai water-readiness` and confirm deterministic water metrics are returned.
+14. Run the Pi one-shot command above and confirm Pi reports a placed water tank.
+15. For final proof, capture screenshots showing the four-button HUD, a Pi-posted four-option menu, a submitted answer, and a tool-result state.
+16. Check logs with `make logs`; the mod should log its startup, interaction, and command messages in `Player.log`.
 
 ## References
 

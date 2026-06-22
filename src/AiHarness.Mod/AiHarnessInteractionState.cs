@@ -26,6 +26,7 @@ namespace LouisPaulet.AiHarness {
     private string _lastTool = "";
     private bool _lastToolOk;
     private string _lastToolSummary = "";
+    private int _refreshRequests;
     private int _revision;
     private AiHarnessInteractionOption[] _options = DefaultOptions();
 
@@ -61,9 +62,33 @@ namespace LouisPaulet.AiHarness {
         _lastTool = "";
         _lastToolOk = false;
         _lastToolSummary = "";
+        _refreshRequests = 0;
         _options = RequestedOptions();
         BumpRevisionLocked();
         Debug.Log("[LouisPaulet.AiHarness] Pi interaction requested: " + _interactionId + " topic=" + _topic);
+        return SnapshotDataLocked();
+      }
+    }
+
+    public object RequestChoiceRefresh() {
+      lock (_lock) {
+        _status = "refreshRequested";
+        if (string.IsNullOrWhiteSpace(_interactionId)) {
+          _interactionId = "interaction-" + Guid.NewGuid().ToString("N");
+        }
+
+        _menuId = "";
+        _question = "Choice refresh requested. Waiting for Pi to offer a different path.";
+        _lastError = "";
+        _lastButton = 0;
+        _lastTool = "";
+        _lastToolOk = false;
+        _lastToolSummary = "";
+        _refreshRequests++;
+        _options = RefreshRequestedOptions();
+        BumpRevisionLocked();
+        Debug.Log("[LouisPaulet.AiHarness] Pi interaction refresh requested: " + _interactionId
+            + " refresh=" + _refreshRequests.ToString(CultureInfo.InvariantCulture));
         return SnapshotDataLocked();
       }
     }
@@ -162,6 +187,7 @@ namespace LouisPaulet.AiHarness {
         _lastTool = "";
         _lastToolOk = false;
         _lastToolSummary = "";
+        _refreshRequests = 0;
         _options = DefaultOptions();
         BumpRevisionLocked();
         Debug.Log("[LouisPaulet.AiHarness] Pi interaction cleared.");
@@ -182,6 +208,7 @@ namespace LouisPaulet.AiHarness {
         { "contextHash", _contextHash },
         { "replayKey", ReplayKeyLocked() },
         { "revision", _revision },
+        { "refreshRequests", _refreshRequests },
         { "lastButton", _lastButton },
         { "lastAnswer", LastAnswerDataLocked() },
         { "lastTool", new Dictionary<string, object> {
@@ -293,6 +320,15 @@ namespace LouisPaulet.AiHarness {
     private static AiHarnessInteractionOption[] RequestedOptions() {
       return new[] {
         new AiHarnessInteractionOption(1, "Waiting", "menu", "waiting"),
+        new AiHarnessInteractionOption(2, "Status", "tool", "timberborn_status"),
+        new AiHarnessInteractionOption(3, "Context", "tool", "timberborn_game_context"),
+        new AiHarnessInteractionOption(4, "Cancel", "cancel", "")
+      };
+    }
+
+    private static AiHarnessInteractionOption[] RefreshRequestedOptions() {
+      return new[] {
+        new AiHarnessInteractionOption(1, "Refreshing", "menu", "refreshing"),
         new AiHarnessInteractionOption(2, "Status", "tool", "timberborn_status"),
         new AiHarnessInteractionOption(3, "Context", "tool", "timberborn_game_context"),
         new AiHarnessInteractionOption(4, "Cancel", "cancel", "")

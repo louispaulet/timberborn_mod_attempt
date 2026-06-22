@@ -12,6 +12,7 @@ namespace LouisPaulet.AiHarness {
     private VisualElement? _root;
     private Label? _question;
     private Button? _askButton;
+    private Button? _refreshButton;
     private Button[] _answerButtons = new Button[0];
     private int _seenRevision = -1;
     private bool _collapsed;
@@ -66,6 +67,17 @@ namespace LouisPaulet.AiHarness {
       StyleButton(_askButton);
       topRow.Add(_askButton);
 
+      _refreshButton = new Button(() => {
+        _collapsed = false;
+        _interactionState.RequestChoiceRefresh();
+      });
+      _refreshButton.text = "♻";
+      _refreshButton.tooltip = "Refresh choices";
+      _refreshButton.style.width = 30;
+      _refreshButton.style.marginLeft = 4;
+      StyleButton(_refreshButton);
+      topRow.Add(_refreshButton);
+
       var collapseButton = new Button(() => {
         _collapsed = !_collapsed;
         Refresh();
@@ -105,7 +117,7 @@ namespace LouisPaulet.AiHarness {
     }
 
     private void Refresh() {
-      if (_root == null || _question == null || _askButton == null || _answerButtons.Length != 4) {
+      if (_root == null || _question == null || _askButton == null || _refreshButton == null || _answerButtons.Length != 4) {
         return;
       }
 

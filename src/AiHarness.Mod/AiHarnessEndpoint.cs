@@ -95,6 +95,8 @@ namespace LouisPaulet.AiHarness {
           return HandleInteractionRequest(query);
         case "interaction/show":
           return HandleInteractionShow(query);
+        case "interaction/refresh":
+          return _commandQueue.Run("interaction-refresh", _interactionState.RequestChoiceRefresh);
         case "interaction/answer":
           return HandleInteractionAnswer(query);
         case "interaction/tool-result":
@@ -355,6 +357,7 @@ namespace LouisPaulet.AiHarness {
           "GET /api/ai-harness/interaction",
           "GET|POST /api/ai-harness/interaction/request?topic=...",
           "GET|POST /api/ai-harness/interaction/show?interactionId=...&menuId=...&question=...&label1=...&kind1=...&payload1=...",
+          "GET|POST /api/ai-harness/interaction/refresh",
           "GET|POST /api/ai-harness/interaction/answer?button=1|2|3|4",
           "GET|POST /api/ai-harness/interaction/tool-result?tool=...&ok=true|false&summary=...",
           "GET|POST /api/ai-harness/interaction/clear",

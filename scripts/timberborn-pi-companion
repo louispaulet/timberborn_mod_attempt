@@ -81,58 +81,149 @@ def show_menu(base_url, interaction_id, menu_id, question, skill_id, menu_path, 
     return request_json(base_url, "/api/ai-harness/interaction/show", params, method="POST")
 
 
-def root_menu(base_url, interaction_id):
+def read_refresh_count(data):
+    try:
+        return max(0, int(data.get("refreshRequests") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def refresh_suffix(refresh_count):
+    return "" if refresh_count <= 0 else f"-refresh-{refresh_count}"
+
+
+def refresh_context(refresh_count):
+    return "live" if refresh_count <= 0 else f"live-refresh-{refresh_count}"
+
+
+def root_menu(base_url, interaction_id, refresh_count=0):
+    variants = [
+        (
+            "Pi: what should I inspect for this settlement?",
+            [
+                {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
+                {"label": "Game context", "kind": "tool", "payload": "timberborn_game_context"},
+                {"label": "Build tips", "kind": "menu", "payload": "building.pathing"},
+                {"label": "No", "kind": "no", "payload": ""},
+            ],
+        ),
+        (
+            "Pi: want a different angle?",
+            [
+                {"label": "Settlement snapshot", "kind": "tool", "payload": "timberborn_game_context"},
+                {"label": "Water risk", "kind": "tool", "payload": "timberborn_water_readiness"},
+                {"label": "Pathing ideas", "kind": "menu", "payload": "building.pathing"},
+                {"label": "No", "kind": "no", "payload": ""},
+            ],
+        ),
+        (
+            "Pi: choose a new thread to pull.",
+            [
+                {"label": "Harness status", "kind": "tool", "payload": "timberborn_status"},
+                {"label": "Build route", "kind": "menu", "payload": "building.pathing"},
+                {"label": "Water numbers", "kind": "tool", "payload": "timberborn_water_readiness"},
+                {"label": "No", "kind": "no", "payload": ""},
+            ],
+        ),
+    ]
+    question, options = variants[refresh_count % len(variants)]
     return show_menu(
         base_url,
         interaction_id,
-        "pi-root",
-        "Pi: what should I inspect for this settlement?",
+        "pi-root" + refresh_suffix(refresh_count),
+        question,
         "water.storage-readiness",
         "root",
-        "live",
+        refresh_context(refresh_count),
+        options,
+    )
+
+
+def build_tips_menu(base_url, interaction_id, refresh_count=0):
+    variants = [
+        (
+            "Pi: building tips. What should I help with next?",
+            [
+                {"label": "Check context", "kind": "tool", "payload": "timberborn_game_context"},
+                {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
+                {"label": "Root menu", "kind": "menu", "payload": "root"},
+                {"label": "Back", "kind": "back", "payload": "root"},
+            ],
+        ),
+        (
+            "Pi: another building angle?",
+            [
+                {"label": "Map context", "kind": "tool", "payload": "timberborn_game_context"},
+                {"label": "Water constraint", "kind": "tool", "payload": "timberborn_water_readiness"},
+                {"label": "Root menu", "kind": "menu", "payload": "root"},
+                {"label": "Back", "kind": "back", "payload": "root"},
+            ],
+        ),
+        (
+            "Pi: want to pivot the build plan?",
+            [
+                {"label": "Harness status", "kind": "tool", "payload": "timberborn_status"},
+                {"label": "Water first", "kind": "tool", "payload": "timberborn_water_readiness"},
+                {"label": "Root menu", "kind": "menu", "payload": "root"},
+                {"label": "Back", "kind": "back", "payload": "root"},
+            ],
+        ),
+    ]
+    question, options = variants[refresh_count % len(variants)]
+    return show_menu(
+        base_url,
+        interaction_id,
+        "building-pathing" + refresh_suffix(refresh_count),
+        question,
+        "building.pathing",
+        "building/pathing",
+        refresh_context(refresh_count),
+        options,
+    )
+
+
+def result_menu(base_url, interaction_id, question, refresh_count=0):
+    variants = [
         [
             {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
             {"label": "Game context", "kind": "tool", "payload": "timberborn_game_context"},
             {"label": "Build tips", "kind": "menu", "payload": "building.pathing"},
             {"label": "No", "kind": "no", "payload": ""},
         ],
-    )
-
-
-def build_tips_menu(base_url, interaction_id):
-    return show_menu(
-        base_url,
-        interaction_id,
-        "building-pathing",
-        "Pi: building tips. What should I help with next?",
-        "building.pathing",
-        "building/pathing",
-        "live",
         [
-            {"label": "Check context", "kind": "tool", "payload": "timberborn_game_context"},
-            {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
-            {"label": "Root menu", "kind": "menu", "payload": "root"},
-            {"label": "Back", "kind": "back", "payload": "root"},
+            {"label": "Settlement snapshot", "kind": "tool", "payload": "timberborn_game_context"},
+            {"label": "Pathing ideas", "kind": "menu", "payload": "building.pathing"},
+            {"label": "Water risk", "kind": "tool", "payload": "timberborn_water_readiness"},
+            {"label": "No", "kind": "no", "payload": ""},
         ],
-    )
-
-
-def result_menu(base_url, interaction_id, question):
+        [
+            {"label": "Harness status", "kind": "tool", "payload": "timberborn_status"},
+            {"label": "Water numbers", "kind": "tool", "payload": "timberborn_water_readiness"},
+            {"label": "Build route", "kind": "menu", "payload": "building.pathing"},
+            {"label": "No", "kind": "no", "payload": ""},
+        ],
+    ]
     return show_menu(
         base_url,
         interaction_id,
-        "pi-result",
+        "pi-result" + refresh_suffix(refresh_count),
         question,
         "general",
         "result",
-        "live",
-        [
-            {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
-            {"label": "Game context", "kind": "tool", "payload": "timberborn_game_context"},
-            {"label": "Build tips", "kind": "menu", "payload": "building.pathing"},
-            {"label": "No", "kind": "no", "payload": ""},
-        ],
+        refresh_context(refresh_count),
+        variants[refresh_count % len(variants)],
     )
+
+
+def refreshed_menu(base_url, data):
+    interaction_id = data["interactionId"]
+    refresh_count = read_refresh_count(data)
+    menu_path = (data.get("menuPath") or "root").lower()
+    if menu_path.startswith("building"):
+        return build_tips_menu(base_url, interaction_id, refresh_count)
+    if menu_path == "result":
+        return result_menu(base_url, interaction_id, "Pi: refreshed choices. Which path feels better?", refresh_count)
+    return root_menu(base_url, interaction_id, refresh_count)
 
 
 def summarize_water(payload):
@@ -185,16 +276,20 @@ def tick(base_url, seen_revision):
 
     if status == "requested":
         print(json.dumps(root_menu(base_url, interaction_id), sort_keys=True), flush=True)
+    elif status == "refreshRequested":
+        print(json.dumps(refreshed_menu(base_url, data), sort_keys=True), flush=True)
     elif status == "answerSubmitted":
         answer = data.get("lastAnswer") or {}
         payload = answer.get("payload", "")
+        refresh_count = read_refresh_count(data)
         if answer.get("kind") in ("menu", "nav", "navigate") and payload == "building.pathing":
-            print(json.dumps(build_tips_menu(base_url, interaction_id), sort_keys=True), flush=True)
+            print(json.dumps(build_tips_menu(base_url, interaction_id, refresh_count), sort_keys=True), flush=True)
         elif answer.get("kind") in ("menu", "nav", "navigate"):
-            print(json.dumps(root_menu(base_url, interaction_id), sort_keys=True), flush=True)
+            print(json.dumps(root_menu(base_url, interaction_id, refresh_count), sort_keys=True), flush=True)
     elif status == "toolRequested":
         answer = data.get("lastAnswer") or {}
         tool = answer.get("payload", "")
+        refresh_count = read_refresh_count(data)
         payload, summary = run_tool(base_url, tool)
         ok = bool(payload.get("ok"))
         print(json.dumps(request_json(
@@ -203,7 +298,7 @@ def tick(base_url, seen_revision):
             {"tool": tool, "ok": str(ok).lower(), "summary": summary},
             method="POST",
         ), sort_keys=True), flush=True)
-        print(json.dumps(result_menu(base_url, interaction_id, summary), sort_keys=True), flush=True)
+        print(json.dumps(result_menu(base_url, interaction_id, summary, refresh_count), sort_keys=True), flush=True)
 
     return revision
 

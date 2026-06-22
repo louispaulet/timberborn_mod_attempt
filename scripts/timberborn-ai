@@ -65,6 +65,8 @@ def build_parser():
     interaction_request_parser.add_argument("--topic", default="current situation")
     interaction_request_parser.add_argument("--source", default="cli")
 
+    subparsers.add_parser("interaction-refresh", help="Ask Pi to refresh the current four-button choices.")
+
     interaction_show_parser = subparsers.add_parser("interaction-show", help="Show a four-button Pi menu in the HUD.")
     interaction_show_parser.add_argument("--interaction-id")
     interaction_show_parser.add_argument("--menu-id", default="cli-menu")
@@ -160,6 +162,8 @@ def command_request(args):
             {"topic": args.topic, "source": args.source},
             method="POST",
         )
+    if args.command == "interaction-refresh":
+        return request_json(args.base_url, "/api/ai-harness/interaction/refresh", method="POST")
     if args.command == "interaction-show":
         if len(args.label) != 4:
             raise RuntimeError("interaction-show requires exactly four --label values.")
