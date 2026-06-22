@@ -26,6 +26,9 @@ make logs
 make clean
 scripts/timberborn-ai status
 scripts/timberborn-ai place-water-tank
+scripts/timberborn-ai interaction-request --topic "current situation"
+scripts/timberborn-ai interaction
+scripts/timberborn-ai water-readiness
 ```
 
 ## Build And Install
@@ -72,9 +75,20 @@ GET|POST /api/ai-harness/speed?value=0|1|2|3
 GET|POST /api/ai-harness/camera?x=...&y=...&z=...&zoom=...
 GET /api/ai-harness/buildings?query=...
 GET|POST /api/ai-harness/place-building?template=water_tank&x=...&y=...&z=...&orientation=Cw0&flipped=false
+GET /api/ai-harness/interaction
+GET|POST /api/ai-harness/interaction/request?topic=...
+GET|POST /api/ai-harness/interaction/show?interactionId=...&menuId=...&question=...&label1=...&kind1=...&payload1=... through label4/kind4/payload4
+GET|POST /api/ai-harness/interaction/answer?button=1|2|3|4
+GET|POST /api/ai-harness/interaction/tool-result?tool=...&ok=true|false&summary=...
+GET|POST /api/ai-harness/interaction/clear
+GET /api/ai-harness/game-context
+GET /api/ai-harness/resource-summary?good=water
+GET /api/ai-harness/water-readiness
 ```
 
 `place-building` uses Timberborn block coordinates: `x` and `y` are map-plane coordinates, and `z` is elevation. If `x`, `y`, and `z` are omitted, the harness searches for a valid nearby placement around the current camera target.
+
+The template aliases `water_tank`, `path`, `stairs`, and `platform` are intended for Pi and CLI use when exact runtime template names are not known.
 
 The checked-in CLI wraps those endpoints with Python stdlib only:
 
@@ -89,7 +103,21 @@ scripts/timberborn-ai screenshot bridge-check
 scripts/timberborn-ai speed 1
 scripts/timberborn-ai camera --x 32 --y 0 --z 29 --zoom 0.4
 scripts/timberborn-ai place-water-tank
+scripts/timberborn-ai place-path
+scripts/timberborn-ai place-stairs
+scripts/timberborn-ai place-platform
 scripts/timberborn-ai place-building SmallTank.Folktails --x 32 --y 29 --z 3
+scripts/timberborn-ai interaction-request --topic "current situation"
+scripts/timberborn-ai interaction-show --question "What should Pi do?" \
+  --label "Water check" --kind tool --payload timberborn_water_readiness \
+  --label "Build tips" --kind menu --payload building.pathing \
+  --label "Game context" --kind tool --payload timberborn_game_context \
+  --label "No" --kind no
+scripts/timberborn-ai interaction-answer 1
+scripts/timberborn-ai interaction-tool-result timberborn_water_readiness --ok --summary "Water readiness checked."
+scripts/timberborn-ai game-context
+scripts/timberborn-ai resource-summary water
+scripts/timberborn-ai water-readiness
 ```
 
 Set `TIMBERBORN_AI_URL` or pass `--base-url` if the AI Harness server is not on `http://localhost:8080`.
@@ -102,6 +130,13 @@ The project-local Pi extension lives at `.pi/extensions/timberborn-ai-harness/in
 timberborn_status
 timberborn_list_buildings
 timberborn_place_building
+timberborn_interaction_state
+timberborn_show_menu
+timberborn_wait_for_choice
+timberborn_record_tool_result
+timberborn_game_context
+timberborn_resource_summary
+timberborn_water_readiness
 ```
 
 Quick one-shot test:
@@ -114,6 +149,38 @@ pi -p --no-session --approve \
   "Use the timberborn_place_building tool to place one simple water tank in the current Timberborn game. Use template water_tank and omit coordinates so the harness searches near the camera."
 ```
 
+## Four-Button Pi Loop
+
+When the mod is active in a settlement, it adds an `Ask AI` HUD module with four numbered answer buttons. Timberborn never sends freeform text to Pi. The game records a request or one of the four answers; a local Pi companion session polls the harness, chooses deterministic tools when needed, and posts the next four-option menu.
+
+Interaction states are:
+
+```text
+idle -> requested -> menuShown -> answerSubmitted
+idle -> requested -> menuShown -> toolRequested -> toolCompleted
+```
+
+Menus posted by Pi must have exactly four options. Non-confirmation menus must include at least one deterministic tool option, one navigation/menu option, and one back/cancel/no option. Confirmation menus must include yes and no before any mutating action such as placing a building.
+
+Generated/replayable menus are stored as JSON under:
+
+```text
+/Users/louispaulet/Documents/Timberborn/Mods/AiHarness/generated/interactions
+```
+
+Replay keys are based on `modVersion + skillId + menuPath + contextHash`. Pi should reuse a matching local menu before asking the model to generate another equivalent question.
+
+The first bundled Pi skill snippets live under `.pi/extensions/timberborn-ai-harness/skills`:
+
+```text
+building.pathing
+building.vertical-stacking
+water.storage-readiness
+construction.triage
+```
+
+Deterministic context tools intentionally do simple arithmetic in the mod. For example, `water-readiness` returns `waterPerBeaver`, `waterCapacityPerBeaver`, and `daysOfWater = availableWater / max(1, beavers * 2)` so Pi can advise without recomputing those values from prose.
+
 ## Verify In Timberborn
 
 1. Run `make install`.
@@ -125,8 +192,12 @@ pi -p --no-session --approve \
 7. Run `scripts/timberborn-ai popup "Hello from Codex"` and confirm the in-game popup.
 8. Run `scripts/timberborn-ai speed 1`, then `scripts/timberborn-ai status`, and confirm the reported speed is `1`.
 9. Run `scripts/timberborn-ai place-water-tank` and confirm it places `SmallTank.Folktails` as a construction site.
-10. Run the Pi one-shot command above and confirm Pi reports a placed water tank.
-11. Check logs with `make logs`; the mod should log its startup and command messages in `Player.log`.
+10. Run `scripts/timberborn-ai interaction-request --topic "current situation"` and confirm the HUD shows a requested Pi interaction.
+11. Run `scripts/timberborn-ai interaction-show` with four labels/kinds, then answer using one of the four in-game HUD buttons or `scripts/timberborn-ai interaction-answer 1`.
+12. Run `scripts/timberborn-ai water-readiness` and confirm deterministic water metrics are returned.
+13. Run the Pi one-shot command above and confirm Pi reports a placed water tank.
+14. For final proof, capture screenshots showing the four-button HUD, a Pi-posted four-option menu, a submitted answer, and a tool-result state.
+15. Check logs with `make logs`; the mod should log its startup, interaction, and command messages in `Player.log`.
 
 ## References
 

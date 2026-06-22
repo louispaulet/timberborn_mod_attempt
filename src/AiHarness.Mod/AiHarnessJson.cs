@@ -12,6 +12,12 @@ namespace LouisPaulet.AiHarness {
       return json.ToString();
     }
 
+    public static string SerializeObject(object? value) {
+      var json = new StringBuilder();
+      WriteValue(json, value);
+      return json.ToString();
+    }
+
     private static void WriteResponse(StringBuilder json, AiHarnessResponse response) {
       json.Append('{');
       WriteProperty(json, "ok", response.ok);

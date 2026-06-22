@@ -39,6 +39,13 @@ def build_parser():
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("status", help="Read harness and game status.")
     subparsers.add_parser("commands", help="List available harness commands.")
+    subparsers.add_parser("interaction", help="Read current four-button Pi interaction state.")
+    subparsers.add_parser("interaction-clear", help="Clear the current four-button Pi interaction.")
+    subparsers.add_parser("game-context", help="Read deterministic game context for Pi tools.")
+    subparsers.add_parser("water-readiness", help="Compute deterministic water-to-population readiness.")
+
+    resource_parser = subparsers.add_parser("resource-summary", help="Read deterministic resource stock/capacity summary.")
+    resource_parser.add_argument("good", nargs="?", default="water")
 
     buildings_parser = subparsers.add_parser("buildings", help="List placeable building templates.")
     buildings_parser.add_argument("query", nargs="?")
@@ -53,6 +60,29 @@ def build_parser():
 
     popup_parser = subparsers.add_parser("popup", help="Show an in-game popup.")
     popup_parser.add_argument("message")
+
+    interaction_request_parser = subparsers.add_parser("interaction-request", help="Ask Pi for a contextual four-button menu.")
+    interaction_request_parser.add_argument("--topic", default="current situation")
+    interaction_request_parser.add_argument("--source", default="cli")
+
+    interaction_show_parser = subparsers.add_parser("interaction-show", help="Show a four-button Pi menu in the HUD.")
+    interaction_show_parser.add_argument("--interaction-id")
+    interaction_show_parser.add_argument("--menu-id", default="cli-menu")
+    interaction_show_parser.add_argument("--question", required=True)
+    interaction_show_parser.add_argument("--skill-id", default="general")
+    interaction_show_parser.add_argument("--menu-path", default="root")
+    interaction_show_parser.add_argument("--context-hash", default="cli")
+    interaction_show_parser.add_argument("--label", action="append", required=True, help="Option label. Pass exactly four times.")
+    interaction_show_parser.add_argument("--kind", action="append", help="Option kind. Pass up to four times; default: menu.")
+    interaction_show_parser.add_argument("--payload", action="append", help="Option payload. Pass up to four times.")
+
+    interaction_answer_parser = subparsers.add_parser("interaction-answer", help="Submit one of the four Pi HUD buttons.")
+    interaction_answer_parser.add_argument("button", type=int, choices=[1, 2, 3, 4])
+
+    interaction_tool_result_parser = subparsers.add_parser("interaction-tool-result", help="Record a Pi tool result into the four-button loop.")
+    interaction_tool_result_parser.add_argument("tool")
+    interaction_tool_result_parser.add_argument("--ok", action="store_true")
+    interaction_tool_result_parser.add_argument("--summary", default="")
 
     screenshot_parser = subparsers.add_parser("screenshot", help="Capture an in-game screenshot.")
     screenshot_parser.add_argument("name")
@@ -83,6 +113,15 @@ def build_parser():
     water_tank_parser.add_argument("--flipped", action="store_true")
     water_tank_parser.add_argument("--search-radius", type=int, default=16)
 
+    for alias in ("path", "stairs", "platform"):
+        alias_parser = subparsers.add_parser(f"place-{alias}", help=f"Place a {alias} near the camera.")
+        alias_parser.add_argument("--x", type=int)
+        alias_parser.add_argument("--y", type=int)
+        alias_parser.add_argument("--z", type=int)
+        alias_parser.add_argument("--orientation", choices=["Cw0", "Cw90", "Cw180", "Cw270"], default="Cw0")
+        alias_parser.add_argument("--flipped", action="store_true")
+        alias_parser.add_argument("--search-radius", type=int, default=16)
+
     return parser
 
 
@@ -91,6 +130,16 @@ def command_request(args):
         return request_json(args.base_url, "/api/ai-harness/status")
     if args.command == "commands":
         return request_json(args.base_url, "/api/ai-harness/commands")
+    if args.command == "interaction":
+        return request_json(args.base_url, "/api/ai-harness/interaction")
+    if args.command == "interaction-clear":
+        return request_json(args.base_url, "/api/ai-harness/interaction/clear", method="POST")
+    if args.command == "game-context":
+        return request_json(args.base_url, "/api/ai-harness/game-context")
+    if args.command == "resource-summary":
+        return request_json(args.base_url, "/api/ai-harness/resource-summary", {"good": args.good})
+    if args.command == "water-readiness":
+        return request_json(args.base_url, "/api/ai-harness/water-readiness")
     if args.command == "buildings":
         return request_json(args.base_url, "/api/ai-harness/buildings", {"query": args.query})
     if args.command == "new-game":
@@ -104,6 +153,56 @@ def command_request(args):
         return request_json(args.base_url, "/api/ai-harness/log", {"message": args.message}, method="POST")
     if args.command == "popup":
         return request_json(args.base_url, "/api/ai-harness/popup", {"message": args.message}, method="POST")
+    if args.command == "interaction-request":
+        return request_json(
+            args.base_url,
+            "/api/ai-harness/interaction/request",
+            {"topic": args.topic, "source": args.source},
+            method="POST",
+        )
+    if args.command == "interaction-show":
+        if len(args.label) != 4:
+            raise RuntimeError("interaction-show requires exactly four --label values.")
+        kinds = list(args.kind or [])
+        payloads = list(args.payload or [])
+        while len(kinds) < 4:
+            kinds.append("menu")
+        while len(payloads) < 4:
+            payloads.append("")
+        return request_json(
+            args.base_url,
+            "/api/ai-harness/interaction/show",
+            {
+                "interactionId": args.interaction_id,
+                "menuId": args.menu_id,
+                "question": args.question,
+                "skillId": args.skill_id,
+                "menuPath": args.menu_path,
+                "contextHash": args.context_hash,
+                "label1": args.label[0],
+                "kind1": kinds[0],
+                "payload1": payloads[0],
+                "label2": args.label[1],
+                "kind2": kinds[1],
+                "payload2": payloads[1],
+                "label3": args.label[2],
+                "kind3": kinds[2],
+                "payload3": payloads[2],
+                "label4": args.label[3],
+                "kind4": kinds[3],
+                "payload4": payloads[3],
+            },
+            method="POST",
+        )
+    if args.command == "interaction-answer":
+        return request_json(args.base_url, "/api/ai-harness/interaction/answer", {"button": args.button}, method="POST")
+    if args.command == "interaction-tool-result":
+        return request_json(
+            args.base_url,
+            "/api/ai-harness/interaction/tool-result",
+            {"tool": args.tool, "ok": str(args.ok).lower(), "summary": args.summary},
+            method="POST",
+        )
     if args.command == "screenshot":
         return request_json(args.base_url, "/api/ai-harness/screenshot", {"name": args.name}, method="POST")
     if args.command == "speed":
@@ -136,6 +235,22 @@ def command_request(args):
             "/api/ai-harness/place-building",
             {
                 "template": "water_tank",
+                "x": args.x,
+                "y": args.y,
+                "z": args.z,
+                "orientation": args.orientation,
+                "flipped": str(args.flipped).lower(),
+                "searchRadius": args.search_radius,
+            },
+            method="POST",
+        )
+    if args.command in ("place-path", "place-stairs", "place-platform"):
+        template = args.command.replace("place-", "")
+        return request_json(
+            args.base_url,
+            "/api/ai-harness/place-building",
+            {
+                "template": template,
                 "x": args.x,
                 "y": args.y,
                 "z": args.z,

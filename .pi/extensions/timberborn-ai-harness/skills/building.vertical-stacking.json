@@ -1,0 +1,28 @@
+{
+  "id": "building.vertical-stacking",
+  "title": "Vertical Stacking",
+  "summary": "Help the player stack buildings with platforms, stairs, entrances, and sane build order.",
+  "menuPath": "building/vertical-stacking",
+  "contextTools": [
+    "timberborn_game_context",
+    "timberborn_list_buildings"
+  ],
+  "actionTools": [
+    "timberborn_place_building"
+  ],
+  "promptGuidelines": [
+    "Use platforms and stairs as deterministic template aliases when suggesting placements.",
+    "Make sure every upper level has a pathable route to an entrance.",
+    "Recommend building support/platform pieces before dependent upper buildings.",
+    "Before placement, show a four-button confirmation menu with yes and no choices."
+  ],
+  "starterMenu": {
+    "question": "What stacking help do you want?",
+    "options": [
+      { "label": "Check context", "kind": "tool", "payload": "timberborn_game_context" },
+      { "label": "Place platform", "kind": "tool", "payload": "timberborn_place_building:platform" },
+      { "label": "Pathing tips", "kind": "menu", "payload": "building.pathing" },
+      { "label": "Back", "kind": "back", "payload": "root" }
+    ]
+  }
+}

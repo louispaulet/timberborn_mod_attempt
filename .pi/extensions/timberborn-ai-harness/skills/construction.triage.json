@@ -1,0 +1,29 @@
+{
+  "id": "construction.triage",
+  "title": "Construction Triage",
+  "summary": "Help the player reason about paused builds, missing logs/planks, builders, paths, and priorities.",
+  "menuPath": "construction/triage",
+  "contextTools": [
+    "timberborn_game_context",
+    "timberborn_resource_summary",
+    "timberborn_list_buildings"
+  ],
+  "actionTools": [
+    "timberborn_place_building"
+  ],
+  "promptGuidelines": [
+    "Use deterministic resource summaries for logs, planks, and water instead of mental arithmetic.",
+    "Check speed/day/context before advising the player to wait.",
+    "For unreachable construction, route to building.pathing.",
+    "Before placement, show a four-button confirmation menu with yes and no choices."
+  ],
+  "starterMenu": {
+    "question": "What construction issue should Pi inspect?",
+    "options": [
+      { "label": "Check context", "kind": "tool", "payload": "timberborn_game_context" },
+      { "label": "Check logs", "kind": "tool", "payload": "timberborn_resource_summary:log" },
+      { "label": "Pathing help", "kind": "menu", "payload": "building.pathing" },
+      { "label": "Back", "kind": "back", "payload": "root" }
+    ]
+  }
+}

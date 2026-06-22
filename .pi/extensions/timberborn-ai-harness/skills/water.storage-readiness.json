@@ -1,0 +1,29 @@
+{
+  "id": "water.storage-readiness",
+  "title": "Water Storage Readiness",
+  "summary": "Use deterministic water and population metrics to decide whether to build more tanks.",
+  "menuPath": "water/storage-readiness",
+  "contextTools": [
+    "timberborn_water_readiness",
+    "timberborn_resource_summary",
+    "timberborn_game_context"
+  ],
+  "actionTools": [
+    "timberborn_place_building"
+  ],
+  "promptGuidelines": [
+    "Always call timberborn_water_readiness before giving water-to-population advice.",
+    "Use the returned waterPerBeaver, waterCapacityPerBeaver, and daysOfWater values directly.",
+    "Recommend water_tank placement when daysOfWater is low or capacity per beaver is thin.",
+    "Before placing a tank, show a four-button confirmation menu with yes and no choices."
+  ],
+  "starterMenu": {
+    "question": "What water check should Pi run?",
+    "options": [
+      { "label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness" },
+      { "label": "Place tank", "kind": "tool", "payload": "timberborn_place_building:water_tank" },
+      { "label": "Build tips", "kind": "menu", "payload": "building.pathing" },
+      { "label": "No", "kind": "no", "payload": "root" }
+    ]
+  }
+}

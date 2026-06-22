@@ -24,6 +24,16 @@ namespace LouisPaulet.AiHarness {
       "tank"
     };
 
+    private static readonly Dictionary<string, string[]> BuildingAliasKeywords = new Dictionary<string, string[]> {
+      { "path", new[] { "path" } },
+      { "paths", new[] { "path" } },
+      { "road", new[] { "path" } },
+      { "stairs", new[] { "stair" } },
+      { "stair", new[] { "stair" } },
+      { "platform", new[] { "platform" } },
+      { "platforms", new[] { "platform" } }
+    };
+
     private readonly BlockObjectPlacerService _blockObjectPlacerService;
     private readonly CameraService _cameraService;
     private readonly PreviewPlacerFactory _previewPlacerFactory;
@@ -186,6 +196,17 @@ namespace LouisPaulet.AiHarness {
         }
       }
 
+      if (BuildingAliasKeywords.TryGetValue(normalizedQuery, out string[] aliasKeywords)) {
+        PlaceableBlockObjectSpec? aliasMatch = templates
+            .Where(template => MatchesAliasKeywords(template, aliasKeywords))
+            .OrderBy(template => template.ToolOrder)
+            .ThenBy(TemplateName)
+            .FirstOrDefault();
+        if (aliasMatch != null) {
+          return aliasMatch;
+        }
+      }
+
       List<PlaceableBlockObjectSpec> matches = templates
           .Where(template => SearchText(template).Contains(normalizedQuery))
           .OrderBy(template => template.ToolOrder)
@@ -229,6 +250,11 @@ namespace LouisPaulet.AiHarness {
       }
 
       return 2;
+    }
+
+    private static bool MatchesAliasKeywords(PlaceableBlockObjectSpec template, string[] keywords) {
+      string searchText = SearchText(template);
+      return keywords.All(keyword => searchText.Contains(keyword));
     }
 
     private static Dictionary<string, object> BuildingData(PlaceableBlockObjectSpec template) {

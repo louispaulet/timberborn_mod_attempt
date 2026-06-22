@@ -1,0 +1,28 @@
+{
+  "id": "building.pathing",
+  "title": "Pathing And Reachability",
+  "summary": "Help the player connect buildings with paths, stairs, and slopes, then diagnose unreachable construction.",
+  "menuPath": "building/pathing",
+  "contextTools": [
+    "timberborn_game_context",
+    "timberborn_list_buildings"
+  ],
+  "actionTools": [
+    "timberborn_place_building"
+  ],
+  "promptGuidelines": [
+    "Use deterministic game context before giving situation-specific advice.",
+    "Prefer template aliases path and stairs for simple placement help.",
+    "Explain reachability in terms of doors, district access, stairs, and continuous paths.",
+    "Before placing anything, show a four-button confirmation menu with yes and no choices."
+  ],
+  "starterMenu": {
+    "question": "What pathing help do you want?",
+    "options": [
+      { "label": "Check context", "kind": "tool", "payload": "timberborn_game_context" },
+      { "label": "Place path", "kind": "tool", "payload": "timberborn_place_building:path" },
+      { "label": "Stacking tips", "kind": "menu", "payload": "building.vertical-stacking" },
+      { "label": "Back", "kind": "back", "payload": "root" }
+    ]
+  }
+}

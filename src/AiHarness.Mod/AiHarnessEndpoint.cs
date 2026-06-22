@@ -19,6 +19,8 @@ namespace LouisPaulet.AiHarness {
 
     private readonly AiHarnessCommandQueue _commandQueue;
     private readonly AiHarnessBuildingPlacement _buildingPlacement;
+    private readonly AiHarnessGameContext _gameContext;
+    private readonly AiHarnessInteractionState _interactionState;
     private readonly CameraService _cameraService;
     private readonly IDayNightCycle _dayNightCycle;
     private readonly DialogBoxShower _dialogBoxShower;
@@ -27,12 +29,16 @@ namespace LouisPaulet.AiHarness {
     public AiHarnessEndpoint(
         AiHarnessCommandQueue commandQueue,
         AiHarnessBuildingPlacement buildingPlacement,
+        AiHarnessGameContext gameContext,
+        AiHarnessInteractionState interactionState,
         DialogBoxShower dialogBoxShower,
         SpeedManager speedManager,
         CameraService cameraService,
         IDayNightCycle dayNightCycle) {
       _commandQueue = commandQueue;
       _buildingPlacement = buildingPlacement;
+      _gameContext = gameContext;
+      _interactionState = interactionState;
       _dialogBoxShower = dialogBoxShower;
       _speedManager = speedManager;
       _cameraService = cameraService;
@@ -83,6 +89,24 @@ namespace LouisPaulet.AiHarness {
           return HandleBuildings(query);
         case "place-building":
           return HandlePlaceBuilding(query);
+        case "interaction":
+          return _commandQueue.Run("interaction", _interactionState.SnapshotData);
+        case "interaction/request":
+          return HandleInteractionRequest(query);
+        case "interaction/show":
+          return HandleInteractionShow(query);
+        case "interaction/answer":
+          return HandleInteractionAnswer(query);
+        case "interaction/tool-result":
+          return HandleInteractionToolResult(query);
+        case "interaction/clear":
+          return _commandQueue.Run("interaction-clear", _interactionState.Clear);
+        case "game-context":
+          return _commandQueue.Run("game-context", _gameContext.GameContext);
+        case "resource-summary":
+          return HandleResourceSummary(query);
+        case "water-readiness":
+          return _commandQueue.Run("water-readiness", _gameContext.WaterReadiness);
         default:
           return AiHarnessResponse.Failure(command, NewCommandId(command), "Unknown AI Harness command.");
       }
@@ -229,6 +253,73 @@ namespace LouisPaulet.AiHarness {
       return _commandQueue.Run("place-building", () => _buildingPlacement.PlaceBuilding(template, x, y, z, orientation, flipped, searchRadius));
     }
 
+    private AiHarnessResponse HandleInteractionRequest(QueryReader query) {
+      string topic = query("topic") ?? "current situation";
+      string source = query("source") ?? "api";
+      return _commandQueue.Run("interaction-request", () => _interactionState.RequestInteraction(topic, source));
+    }
+
+    private AiHarnessResponse HandleInteractionShow(QueryReader query) {
+      string? question = query("question");
+      if (string.IsNullOrWhiteSpace(question)) {
+        return AiHarnessResponse.Failure("interaction-show", NewCommandId("interaction-show"), "Missing required query parameter: question.");
+      }
+
+      AiHarnessInteractionOption[] options = new AiHarnessInteractionOption[4];
+      for (int i = 1; i <= 4; i++) {
+        string index = i.ToString(CultureInfo.InvariantCulture);
+        string? label = query("label" + index);
+        if (string.IsNullOrWhiteSpace(label)) {
+          return AiHarnessResponse.Failure("interaction-show", NewCommandId("interaction-show"), "Missing required query parameter: label" + index + ".");
+        }
+
+        string kind = query("kind" + index) ?? "menu";
+        string payload = query("payload" + index) ?? "";
+        options[i - 1] = new AiHarnessInteractionOption(i, label, kind, payload);
+      }
+
+      string interactionId = query("interactionId") ?? "";
+      string menuId = query("menuId") ?? "";
+      string skillId = query("skillId") ?? "general";
+      string menuPath = query("menuPath") ?? "root";
+      string contextHash = query("contextHash") ?? "none";
+      return _commandQueue.Run("interaction-show", () => _interactionState.ShowMenu(
+          interactionId,
+          menuId,
+          question,
+          options,
+          skillId,
+          menuPath,
+          contextHash));
+    }
+
+    private AiHarnessResponse HandleInteractionAnswer(QueryReader query) {
+      if (!int.TryParse(query("button"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int button) || button < 1 || button > 4) {
+        return AiHarnessResponse.Failure("interaction-answer", NewCommandId("interaction-answer"), "Button must be one of 1, 2, 3, or 4.");
+      }
+
+      return _commandQueue.Run("interaction-answer", () => _interactionState.SubmitAnswer(button));
+    }
+
+    private AiHarnessResponse HandleInteractionToolResult(QueryReader query) {
+      string? tool = query("tool");
+      if (string.IsNullOrWhiteSpace(tool)) {
+        return AiHarnessResponse.Failure("interaction-tool-result", NewCommandId("interaction-tool-result"), "Missing required query parameter: tool.");
+      }
+
+      if (!TryParseOptionalBool(query("ok"), out bool ok)) {
+        return AiHarnessResponse.Failure("interaction-tool-result", NewCommandId("interaction-tool-result"), "ok must be true or false.");
+      }
+
+      string summary = query("summary") ?? "";
+      return _commandQueue.Run("interaction-tool-result", () => _interactionState.RecordToolResult(tool, ok, summary));
+    }
+
+    private AiHarnessResponse HandleResourceSummary(QueryReader query) {
+      string good = query("good") ?? "water";
+      return _commandQueue.Run("resource-summary", () => _gameContext.ResourceSummary(good));
+    }
+
     private object Status() {
       Vector3 target = _cameraService.Target;
       return new Dictionary<string, object> {
@@ -260,7 +351,16 @@ namespace LouisPaulet.AiHarness {
           "GET|POST /api/ai-harness/speed?value=0|1|2|3",
           "GET|POST /api/ai-harness/camera?x=...&y=...&z=...&zoom=...",
           "GET /api/ai-harness/buildings?query=...",
-          "GET|POST /api/ai-harness/place-building?template=water_tank&x=...&y=...&z=...&orientation=Cw0&flipped=false"
+          "GET|POST /api/ai-harness/place-building?template=water_tank&x=...&y=...&z=...&orientation=Cw0&flipped=false",
+          "GET /api/ai-harness/interaction",
+          "GET|POST /api/ai-harness/interaction/request?topic=...",
+          "GET|POST /api/ai-harness/interaction/show?interactionId=...&menuId=...&question=...&label1=...&kind1=...&payload1=...",
+          "GET|POST /api/ai-harness/interaction/answer?button=1|2|3|4",
+          "GET|POST /api/ai-harness/interaction/tool-result?tool=...&ok=true|false&summary=...",
+          "GET|POST /api/ai-harness/interaction/clear",
+          "GET /api/ai-harness/game-context",
+          "GET /api/ai-harness/resource-summary?good=water",
+          "GET /api/ai-harness/water-readiness"
         } }
       };
     }

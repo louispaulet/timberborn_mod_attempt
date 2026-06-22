@@ -23,6 +23,10 @@
       <HintPath>$(TimberbornManagedDir)/System.Collections.Immutable.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.BaseComponentSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BaseComponentSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Timberborn.BlockObjectTools">
       <HintPath>$(TimberbornManagedDir)/Timberborn.BlockObjectTools.dll</HintPath>
       <Private>false</Private>
@@ -31,8 +35,16 @@
       <HintPath>$(TimberbornManagedDir)/Timberborn.BlockSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.BottomBarSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BottomBarSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Timberborn.BlueprintSystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.BlueprintSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.Common">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.Common.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Timberborn.CoreUI">
@@ -55,8 +67,16 @@
       <HintPath>$(TimberbornManagedDir)/Timberborn.GameSceneLoading.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.GameDistricts">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.GameDistricts.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Timberborn.CameraSystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.CameraSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.Goods">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.Goods.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Timberborn.HttpApiSystem">
@@ -69,6 +89,10 @@
     </Reference>
     <Reference Include="Timberborn.MapRepositorySystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.MapRepositorySystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.ResourceCountingSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.ResourceCountingSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Timberborn.TimeSystem">
@@ -93,6 +117,10 @@
     </Reference>
     <Reference Include="UnityEngine.ScreenCaptureModule">
       <HintPath>$(TimberbornManagedDir)/UnityEngine.ScreenCaptureModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>$(TimberbornManagedDir)/UnityEngine.UIElementsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
