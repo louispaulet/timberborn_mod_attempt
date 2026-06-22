@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Timberborn.CameraSystem;
+using Timberborn.Coordinates;
 using Timberborn.CoreUI;
 using Timberborn.HttpApiSystem;
 using Timberborn.TimeSystem;
@@ -17,6 +18,7 @@ namespace LouisPaulet.AiHarness {
     private const string ApiPrefix = "/api/ai-harness";
 
     private readonly AiHarnessCommandQueue _commandQueue;
+    private readonly AiHarnessBuildingPlacement _buildingPlacement;
     private readonly CameraService _cameraService;
     private readonly IDayNightCycle _dayNightCycle;
     private readonly DialogBoxShower _dialogBoxShower;
@@ -24,11 +26,13 @@ namespace LouisPaulet.AiHarness {
 
     public AiHarnessEndpoint(
         AiHarnessCommandQueue commandQueue,
+        AiHarnessBuildingPlacement buildingPlacement,
         DialogBoxShower dialogBoxShower,
         SpeedManager speedManager,
         CameraService cameraService,
         IDayNightCycle dayNightCycle) {
       _commandQueue = commandQueue;
+      _buildingPlacement = buildingPlacement;
       _dialogBoxShower = dialogBoxShower;
       _speedManager = speedManager;
       _cameraService = cameraService;
@@ -75,6 +79,10 @@ namespace LouisPaulet.AiHarness {
           return HandleSpeed(query);
         case "camera":
           return HandleCamera(query);
+        case "buildings":
+          return HandleBuildings(query);
+        case "place-building":
+          return HandlePlaceBuilding(query);
         default:
           return AiHarnessResponse.Failure(command, NewCommandId(command), "Unknown AI Harness command.");
       }
@@ -192,6 +200,35 @@ namespace LouisPaulet.AiHarness {
       });
     }
 
+    private AiHarnessResponse HandleBuildings(QueryReader query) {
+      return _commandQueue.Run("buildings", () => _buildingPlacement.ListBuildings(query("query")));
+    }
+
+    private AiHarnessResponse HandlePlaceBuilding(QueryReader query) {
+      string template = query("template") ?? "water_tank";
+      if (!TryParseOptionalInt(query("x"), out int? x)
+          || !TryParseOptionalInt(query("y"), out int? y)
+          || !TryParseOptionalInt(query("z"), out int? z)) {
+        return AiHarnessResponse.Failure("place-building", NewCommandId("place-building"), "Coordinates must be integers.");
+      }
+
+      if (!TryParseOrientation(query("orientation") ?? "Cw0", out Orientation orientation)) {
+        return AiHarnessResponse.Failure("place-building", NewCommandId("place-building"), "Orientation must be one of Cw0, Cw90, Cw180, or Cw270.");
+      }
+
+      if (!TryParseOptionalBool(query("flipped"), out bool flipped)) {
+        return AiHarnessResponse.Failure("place-building", NewCommandId("place-building"), "Flipped must be true or false.");
+      }
+
+      int searchRadius = 16;
+      string? searchRadiusText = query("searchRadius");
+      if (searchRadiusText != null && (!int.TryParse(searchRadiusText, NumberStyles.Integer, CultureInfo.InvariantCulture, out searchRadius) || searchRadius < 1 || searchRadius > 64)) {
+        return AiHarnessResponse.Failure("place-building", NewCommandId("place-building"), "searchRadius must be an integer from 1 to 64.");
+      }
+
+      return _commandQueue.Run("place-building", () => _buildingPlacement.PlaceBuilding(template, x, y, z, orientation, flipped, searchRadius));
+    }
+
     private object Status() {
       Vector3 target = _cameraService.Target;
       return new Dictionary<string, object> {
@@ -221,7 +258,9 @@ namespace LouisPaulet.AiHarness {
           "GET|POST /api/ai-harness/popup?message=...",
           "GET|POST /api/ai-harness/screenshot?name=...",
           "GET|POST /api/ai-harness/speed?value=0|1|2|3",
-          "GET|POST /api/ai-harness/camera?x=...&y=...&z=...&zoom=..."
+          "GET|POST /api/ai-harness/camera?x=...&y=...&z=...&zoom=...",
+          "GET /api/ai-harness/buildings?query=...",
+          "GET|POST /api/ai-harness/place-building?template=water_tank&x=...&y=...&z=...&orientation=Cw0&flipped=false"
         } }
       };
     }
@@ -240,6 +279,69 @@ namespace LouisPaulet.AiHarness {
 
     private static float ParseFloat(string? value) {
       return float.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+    }
+
+    private static bool TryParseOptionalInt(string? value, out int? parsed) {
+      if (value == null) {
+        parsed = null;
+        return true;
+      }
+
+      if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)) {
+        parsed = result;
+        return true;
+      }
+
+      parsed = null;
+      return false;
+    }
+
+    private static bool TryParseOptionalBool(string? value, out bool parsed) {
+      if (value == null) {
+        parsed = false;
+        return true;
+      }
+
+      if (bool.TryParse(value, out parsed)) {
+        return true;
+      }
+
+      if (value == "1") {
+        parsed = true;
+        return true;
+      }
+
+      if (value == "0") {
+        parsed = false;
+        return true;
+      }
+
+      parsed = false;
+      return false;
+    }
+
+    private static bool TryParseOrientation(string value, out Orientation orientation) {
+      if (Enum.TryParse(value, ignoreCase: true, out orientation)) {
+        return true;
+      }
+
+      switch (value) {
+        case "0":
+          orientation = Orientation.Cw0;
+          return true;
+        case "90":
+          orientation = Orientation.Cw90;
+          return true;
+        case "180":
+          orientation = Orientation.Cw180;
+          return true;
+        case "270":
+          orientation = Orientation.Cw270;
+          return true;
+        default:
+          orientation = Orientation.Cw0;
+          return false;
+      }
     }
 
     private static string NewCommandId(string command) {

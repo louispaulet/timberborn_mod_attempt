@@ -25,6 +25,7 @@ make launch
 make logs
 make clean
 scripts/timberborn-ai status
+scripts/timberborn-ai place-water-tank
 ```
 
 ## Build And Install
@@ -69,7 +70,11 @@ GET|POST /api/ai-harness/popup?message=...
 GET|POST /api/ai-harness/screenshot?name=...
 GET|POST /api/ai-harness/speed?value=0|1|2|3
 GET|POST /api/ai-harness/camera?x=...&y=...&z=...&zoom=...
+GET /api/ai-harness/buildings?query=...
+GET|POST /api/ai-harness/place-building?template=water_tank&x=...&y=...&z=...&orientation=Cw0&flipped=false
 ```
+
+`place-building` uses Timberborn block coordinates: `x` and `y` are map-plane coordinates, and `z` is elevation. If `x`, `y`, and `z` are omitted, the harness searches for a valid nearby placement around the current camera target.
 
 The checked-in CLI wraps those endpoints with Python stdlib only:
 
@@ -77,14 +82,37 @@ The checked-in CLI wraps those endpoints with Python stdlib only:
 scripts/timberborn-ai status
 scripts/timberborn-ai commands
 scripts/timberborn-ai new-game --settlement AiHarnessTest
+scripts/timberborn-ai buildings tank
 scripts/timberborn-ai log "bridge check"
 scripts/timberborn-ai popup "Hello from Codex"
 scripts/timberborn-ai screenshot bridge-check
 scripts/timberborn-ai speed 1
 scripts/timberborn-ai camera --x 32 --y 0 --z 29 --zoom 0.4
+scripts/timberborn-ai place-water-tank
+scripts/timberborn-ai place-building SmallTank.Folktails --x 32 --y 29 --z 3
 ```
 
-Set `TIMBERBORN_AI_URL` or pass `--base-url` if Timberborn's HTTP API is not on `http://localhost:8080`.
+Set `TIMBERBORN_AI_URL` or pass `--base-url` if the AI Harness server is not on `http://localhost:8080`.
+
+## Pi Adapter
+
+The project-local Pi extension lives at `.pi/extensions/timberborn-ai-harness/index.ts`. It registers:
+
+```text
+timberborn_status
+timberborn_list_buildings
+timberborn_place_building
+```
+
+Quick one-shot test:
+
+```sh
+pi -p --no-session --approve \
+  -e .pi/extensions/timberborn-ai-harness/index.ts \
+  --no-builtin-tools \
+  --tools timberborn_place_building \
+  "Use the timberborn_place_building tool to place one simple water tank in the current Timberborn game. Use template water_tank and omit coordinates so the harness searches near the camera."
+```
 
 ## Verify In Timberborn
 
@@ -96,7 +124,9 @@ Set `TIMBERBORN_AI_URL` or pass `--base-url` if Timberborn's HTTP API is not on 
 6. Run `scripts/timberborn-ai status` and confirm a JSON response with `"ok": true`.
 7. Run `scripts/timberborn-ai popup "Hello from Codex"` and confirm the in-game popup.
 8. Run `scripts/timberborn-ai speed 1`, then `scripts/timberborn-ai status`, and confirm the reported speed is `1`.
-9. Check logs with `make logs`; the mod should log its startup and command messages in `Player.log`.
+9. Run `scripts/timberborn-ai place-water-tank` and confirm it places `SmallTank.Folktails` as a construction site.
+10. Run the Pi one-shot command above and confirm Pi reports a placed water tank.
+11. Check logs with `make logs`; the mod should log its startup and command messages in `Player.log`.
 
 ## References
 

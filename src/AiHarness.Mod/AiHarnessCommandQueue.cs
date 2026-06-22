@@ -69,7 +69,7 @@ namespace LouisPaulet.AiHarness {
           Data = _action();
         } catch (Exception exception) {
           Error = exception.Message;
-          Debug.LogException(exception);
+          Debug.LogError("[LouisPaulet.AiHarness] Command failed: " + exception.Message);
         } finally {
           _completed.Set();
           _completed.Dispose();

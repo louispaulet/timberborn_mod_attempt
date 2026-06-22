@@ -40,6 +40,9 @@ def build_parser():
     subparsers.add_parser("status", help="Read harness and game status.")
     subparsers.add_parser("commands", help="List available harness commands.")
 
+    buildings_parser = subparsers.add_parser("buildings", help="List placeable building templates.")
+    buildings_parser.add_argument("query", nargs="?")
+
     new_game_parser = subparsers.add_parser("new-game", help="Start a throwaway new game from the main menu.")
     new_game_parser.add_argument("--settlement", default="AiHarnessTest")
     new_game_parser.add_argument("--map")
@@ -63,6 +66,23 @@ def build_parser():
     camera_parser.add_argument("--z", type=float)
     camera_parser.add_argument("--zoom", type=float)
 
+    place_parser = subparsers.add_parser("place-building", help="Place a building or construction site.")
+    place_parser.add_argument("template", nargs="?", default="water_tank")
+    place_parser.add_argument("--x", type=int)
+    place_parser.add_argument("--y", type=int)
+    place_parser.add_argument("--z", type=int)
+    place_parser.add_argument("--orientation", choices=["Cw0", "Cw90", "Cw180", "Cw270"], default="Cw0")
+    place_parser.add_argument("--flipped", action="store_true")
+    place_parser.add_argument("--search-radius", type=int, default=16)
+
+    water_tank_parser = subparsers.add_parser("place-water-tank", help="Place a simple water tank near the camera.")
+    water_tank_parser.add_argument("--x", type=int)
+    water_tank_parser.add_argument("--y", type=int)
+    water_tank_parser.add_argument("--z", type=int)
+    water_tank_parser.add_argument("--orientation", choices=["Cw0", "Cw90", "Cw180", "Cw270"], default="Cw0")
+    water_tank_parser.add_argument("--flipped", action="store_true")
+    water_tank_parser.add_argument("--search-radius", type=int, default=16)
+
     return parser
 
 
@@ -71,6 +91,8 @@ def command_request(args):
         return request_json(args.base_url, "/api/ai-harness/status")
     if args.command == "commands":
         return request_json(args.base_url, "/api/ai-harness/commands")
+    if args.command == "buildings":
+        return request_json(args.base_url, "/api/ai-harness/buildings", {"query": args.query})
     if args.command == "new-game":
         return request_json(
             args.base_url,
@@ -91,6 +113,36 @@ def command_request(args):
             args.base_url,
             "/api/ai-harness/camera",
             {"x": args.x, "y": args.y, "z": args.z, "zoom": args.zoom},
+            method="POST",
+        )
+    if args.command == "place-building":
+        return request_json(
+            args.base_url,
+            "/api/ai-harness/place-building",
+            {
+                "template": args.template,
+                "x": args.x,
+                "y": args.y,
+                "z": args.z,
+                "orientation": args.orientation,
+                "flipped": str(args.flipped).lower(),
+                "searchRadius": args.search_radius,
+            },
+            method="POST",
+        )
+    if args.command == "place-water-tank":
+        return request_json(
+            args.base_url,
+            "/api/ai-harness/place-building",
+            {
+                "template": "water_tank",
+                "x": args.x,
+                "y": args.y,
+                "z": args.z,
+                "orientation": args.orientation,
+                "flipped": str(args.flipped).lower(),
+                "searchRadius": args.search_radius,
+            },
             method="POST",
         )
     raise RuntimeError(f"Unknown command: {args.command}")

@@ -23,8 +23,28 @@
       <HintPath>$(TimberbornManagedDir)/System.Collections.Immutable.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.BlockObjectTools">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BlockObjectTools.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.BlockSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BlockSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.BlueprintSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BlueprintSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Timberborn.CoreUI">
       <HintPath>$(TimberbornManagedDir)/Timberborn.CoreUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.Coordinates">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.Coordinates.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.EntitySystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.EntitySystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Timberborn.FactionSystem">
@@ -59,8 +79,16 @@
       <HintPath>$(TimberbornManagedDir)/Timberborn.SingletonSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.TemplateSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.TemplateSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(TimberbornManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.UndoSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.UndoSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ScreenCaptureModule">

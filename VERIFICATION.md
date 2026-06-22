@@ -85,3 +85,41 @@ The PNG was verified as `2940 x 1912` and is intentionally kept out of git with 
 ```
 
 No AI Harness exceptions or errors were found in the checked log lines.
+
+## Pi Adapter And Building Placement
+
+Verified on 2026-06-22 12:43:40 CEST with Timberborn `v1.1.0.2-3c063a9-xsm`.
+
+### Commands
+
+```sh
+make build
+make install
+scripts/timberborn-ai new-game --settlement AiHarnessPiTank2-20260622 --map Diorama --faction Folktails
+scripts/timberborn-ai buildings tank
+scripts/timberborn-ai place-water-tank
+pi -p --no-session --approve -e .pi/extensions/timberborn-ai-harness/index.ts --no-builtin-tools --tools timberborn_place_building "Use the timberborn_place_building tool to place one simple water tank in the current Timberborn game. Use template water_tank and omit coordinates so the harness searches near the camera."
+scripts/timberborn-ai screenshot pi-water-tank-placement-20260622
+scripts/timberborn-ai place-building definitely-not-a-template
+scripts/timberborn-ai status
+```
+
+### Results
+
+- `scripts/timberborn-ai buildings tank` resolved Timberborn's water tank templates, including `SmallTank.Folktails`.
+- `scripts/timberborn-ai place-water-tank` placed `SmallTank.Folktails` as a construction site at block coordinates `x=32, y=29, z=3`.
+- Pi used the project-local extension tool `timberborn_place_building` and reported a second water tank placed at `x=32, y=28, z=3`.
+- An intentional invalid template request returned `"ok": false`; a follow-up status request remained healthy.
+- The screenshot command produced:
+
+```text
+/Users/louispaulet/Documents/Timberborn/Mods/AiHarness/generated/screenshots/pi-water-tank-placement-20260622.png
+```
+
+`Player.log` contained:
+
+```text
+[LouisPaulet.AiHarness] Started throwaway new game: AiHarnessPiTank2-20260622 map=Diorama faction=Folktails
+[LouisPaulet.AiHarness] Placed building SmallTank.Folktails at x=32, y=29, z=3, orientation=Cw0, flipped=False
+[LouisPaulet.AiHarness] Placed building SmallTank.Folktails at x=32, y=28, z=3, orientation=Cw0, flipped=False
+```
