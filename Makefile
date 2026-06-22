@@ -67,6 +67,11 @@ launch:
 
 up:
 	@mkdir -p "$(CURDIR)/.tools" "$(CURDIR)/logs"
+	@if ! pgrep -x Timberborn >/dev/null 2>&1; then \
+		echo "Timberborn is not running; refusing to start the Pi companion."; \
+		echo "Launch Timberborn first, then run make up."; \
+		exit 2; \
+	fi
 	@if [ -f "$(LOOP_PID)" ] && kill -0 "$$(cat "$(LOOP_PID)")" >/dev/null 2>&1; then \
 		echo "Timberborn Pi companion already running with PID $$(cat "$(LOOP_PID)")"; \
 	else \
@@ -90,6 +95,7 @@ down:
 	else \
 		echo "Timberborn Pi companion is not running (no PID file)"; \
 	fi
+	@pkill -TERM -f "$(CURDIR)/[s]cripts/timberborn-pi-companion" >/dev/null 2>&1 || true
 
 logs:
 	@test -f "$(PLAYER_LOG)" || (echo "Player log not found: $(PLAYER_LOG)" && exit 1)
