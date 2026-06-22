@@ -63,6 +63,7 @@ namespace LouisPaulet.AiHarness {
       });
       _askButton.text = "Ask AI";
       _askButton.style.width = 88;
+      StyleButton(_askButton);
       topRow.Add(_askButton);
 
       var collapseButton = new Button(() => {
@@ -72,12 +73,14 @@ namespace LouisPaulet.AiHarness {
       collapseButton.text = "-";
       collapseButton.style.width = 30;
       collapseButton.style.marginLeft = 4;
+      StyleButton(collapseButton);
       topRow.Add(collapseButton);
 
       _question = new Label();
       _question.style.whiteSpace = WhiteSpace.Normal;
       _question.style.flexGrow = 1;
       _question.style.marginLeft = 6;
+      _question.style.color = new StyleColor(new UnityEngine.Color(0.94f, 0.92f, 0.82f, 1f));
       topRow.Add(_question);
 
       var answerGrid = new VisualElement();
@@ -93,6 +96,7 @@ namespace LouisPaulet.AiHarness {
         answerButton.style.width = 166;
         answerButton.style.marginTop = 3;
         answerButton.style.marginRight = 3;
+        StyleButton(answerButton);
         answerGrid.Add(answerButton);
         _answerButtons[i] = answerButton;
       }
@@ -118,6 +122,19 @@ namespace LouisPaulet.AiHarness {
         var option = (Dictionary<string, object>) options[i];
         _answerButtons[i].text = (i + 1).ToString() + ". " + (string) option["label"];
       }
+    }
+
+    private static void StyleButton(Button button) {
+      button.style.color = new StyleColor(new UnityEngine.Color(0.98f, 0.96f, 0.86f, 1f));
+      button.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.14f, 0.22f, 0.24f, 0.96f));
+      button.style.borderTopColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
+      button.style.borderRightColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
+      button.style.borderBottomColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
+      button.style.borderLeftColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
+      button.style.borderTopWidth = 1;
+      button.style.borderRightWidth = 1;
+      button.style.borderBottomWidth = 1;
+      button.style.borderLeftWidth = 1;
     }
 
   }
