@@ -157,7 +157,7 @@ pi -p --no-session --approve \
 
 ## Four-Button Pi Loop
 
-When the mod is active in a settlement, it adds an `Ask AI` HUD module with four numbered answer buttons and a recycle-icon refresh button. Timberborn never sends freeform text to Pi. The game records a request, refresh request, or one of the four answers; a local Pi companion session polls the harness, chooses deterministic tools when needed, and posts the next four-option menu.
+When the mod is active in a settlement, it adds an `Ask AI` HUD module with four numbered answer buttons and a recycle-icon refresh button. The current Pi text wraps inside a capped scroll area so verbose responses remain readable without pushing the buttons off-screen. Timberborn never sends freeform text to Pi. The game records a request, refresh request, or one of the four answers; a local Pi companion session polls the harness, chooses deterministic tools when needed, and posts the next four-option menu.
 
 Interaction states are:
 

@@ -10,7 +10,9 @@ namespace LouisPaulet.AiHarness {
     private readonly AiHarnessInteractionState _interactionState;
 
     private VisualElement? _root;
+    private Label? _statusLabel;
     private Label? _question;
+    private ScrollView? _questionScrollView;
     private Button? _askButton;
     private Button? _refreshButton;
     private Button[] _answerButtons = new Button[0];
@@ -88,12 +90,37 @@ namespace LouisPaulet.AiHarness {
       StyleButton(collapseButton);
       topRow.Add(collapseButton);
 
+      _statusLabel = new Label();
+      _statusLabel.style.flexGrow = 1;
+      _statusLabel.style.marginLeft = 6;
+      _statusLabel.style.color = new StyleColor(new UnityEngine.Color(0.94f, 0.92f, 0.82f, 1f));
+      topRow.Add(_statusLabel);
+
+      _questionScrollView = new ScrollView(ScrollViewMode.Vertical);
+      _questionScrollView.name = "AiHarnessQuestionScrollView";
+      _questionScrollView.style.minHeight = 34;
+      _questionScrollView.style.maxHeight = 126;
+      _questionScrollView.style.marginBottom = 4;
+      _questionScrollView.style.paddingLeft = 6;
+      _questionScrollView.style.paddingRight = 6;
+      _questionScrollView.style.paddingTop = 4;
+      _questionScrollView.style.paddingBottom = 4;
+      _questionScrollView.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.04f, 0.05f, 0.06f, 0.72f));
+      _questionScrollView.style.borderTopColor = new StyleColor(new UnityEngine.Color(0.3f, 0.36f, 0.35f, 0.9f));
+      _questionScrollView.style.borderRightColor = new StyleColor(new UnityEngine.Color(0.3f, 0.36f, 0.35f, 0.9f));
+      _questionScrollView.style.borderBottomColor = new StyleColor(new UnityEngine.Color(0.3f, 0.36f, 0.35f, 0.9f));
+      _questionScrollView.style.borderLeftColor = new StyleColor(new UnityEngine.Color(0.3f, 0.36f, 0.35f, 0.9f));
+      _questionScrollView.style.borderTopWidth = 1;
+      _questionScrollView.style.borderRightWidth = 1;
+      _questionScrollView.style.borderBottomWidth = 1;
+      _questionScrollView.style.borderLeftWidth = 1;
+      root.Add(_questionScrollView);
+
       _question = new Label();
       _question.style.whiteSpace = WhiteSpace.Normal;
-      _question.style.flexGrow = 1;
-      _question.style.marginLeft = 6;
+      _question.style.flexShrink = 0;
       _question.style.color = new StyleColor(new UnityEngine.Color(0.94f, 0.92f, 0.82f, 1f));
-      topRow.Add(_question);
+      _questionScrollView.Add(_question);
 
       var answerGrid = new VisualElement();
       answerGrid.name = "AiHarnessAnswerGrid";
@@ -106,8 +133,10 @@ namespace LouisPaulet.AiHarness {
         int button = i + 1;
         var answerButton = new Button(() => _interactionState.SubmitAnswer(button));
         answerButton.style.width = 166;
+        answerButton.style.minHeight = 34;
         answerButton.style.marginTop = 3;
         answerButton.style.marginRight = 3;
+        answerButton.style.whiteSpace = WhiteSpace.Normal;
         StyleButton(answerButton);
         answerGrid.Add(answerButton);
         _answerButtons[i] = answerButton;
@@ -117,7 +146,8 @@ namespace LouisPaulet.AiHarness {
     }
 
     private void Refresh() {
-      if (_root == null || _question == null || _askButton == null || _refreshButton == null || _answerButtons.Length != 4) {
+      if (_root == null || _statusLabel == null || _question == null || _questionScrollView == null
+          || _askButton == null || _refreshButton == null || _answerButtons.Length != 4) {
         return;
       }
 
@@ -125,7 +155,9 @@ namespace LouisPaulet.AiHarness {
       _seenRevision = (int) snapshot["revision"];
       string status = (string) snapshot["status"];
       _askButton.text = _collapsed ? "AI" : "Ask AI";
-      _question.text = _collapsed ? status : status + ": " + (string) snapshot["question"];
+      _statusLabel.text = status;
+      _question.text = (string) snapshot["question"];
+      _questionScrollView.style.display = _collapsed ? DisplayStyle.None : DisplayStyle.Flex;
       VisualElement answerGrid = _root.Q<VisualElement>("AiHarnessAnswerGrid");
       answerGrid.style.display = _collapsed ? DisplayStyle.None : DisplayStyle.Flex;
 
@@ -139,6 +171,7 @@ namespace LouisPaulet.AiHarness {
     private static void StyleButton(Button button) {
       button.style.color = new StyleColor(new UnityEngine.Color(0.98f, 0.96f, 0.86f, 1f));
       button.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.14f, 0.22f, 0.24f, 0.96f));
+      button.style.whiteSpace = WhiteSpace.Normal;
       button.style.borderTopColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
       button.style.borderRightColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
       button.style.borderBottomColor = new StyleColor(new UnityEngine.Color(0.75f, 0.62f, 0.33f, 1f));
