@@ -1,8 +1,8 @@
 {
-  "Name": "Hello World",
+  "Name": "AI Harness",
   "Version": "0.1.0",
-  "Id": "LouisPaulet.HelloWorld",
+  "Id": "LouisPaulet.AiHarness",
   "MinimumGameVersion": "1.0.0.0",
-  "Description": "Shows a Hello World popup when a settlement loads.",
+  "Description": "Exposes a small localhost command harness for AI tools and scripts.",
   "RequiredMods": []
 }

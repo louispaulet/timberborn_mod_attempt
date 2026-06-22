@@ -5,10 +5,10 @@ MANAGED_DIR := $(GAME_APP)/Contents/Resources/Data/Managed
 MODS_DIR := /Users/louispaulet/Documents/Timberborn/Mods
 PLAYER_LOG := /Users/louispaulet/Library/Logs/Mechanistry/Timberborn/Player.log
 
-MOD_NAME := HelloWorld
-PROJECT := src/HelloWorld.Mod/HelloWorld.Mod.csproj
-DLL := src/HelloWorld.Mod/bin/Release/netstandard2.1/HelloWorld.Mod.dll
-PACKAGE_DIR := dist/HelloWorld
+MOD_NAME := AiHarness
+PROJECT := src/AiHarness.Mod/AiHarness.Mod.csproj
+DLL := src/AiHarness.Mod/bin/Release/netstandard2.1/AiHarness.Mod.dll
+PACKAGE_DIR := dist/AiHarness
 
 LOCAL_DOTNET := $(CURDIR)/.tools/dotnet/dotnet
 DOTNET := $(shell command -v dotnet 2>/dev/null || printf '%s' '$(LOCAL_DOTNET)')
@@ -20,6 +20,9 @@ verify-env:
 	@test -d "$(MANAGED_DIR)" || (echo "Managed DLL directory not found: $(MANAGED_DIR)" && exit 1)
 	@test -f "$(MANAGED_DIR)/Timberborn.ModManagerScene.dll" || (echo "Missing Timberborn.ModManagerScene.dll" && exit 1)
 	@test -f "$(MANAGED_DIR)/Timberborn.CoreUI.dll" || (echo "Missing Timberborn.CoreUI.dll" && exit 1)
+	@test -f "$(MANAGED_DIR)/Timberborn.HttpApiSystem.dll" || (echo "Missing Timberborn.HttpApiSystem.dll" && exit 1)
+	@test -f "$(MANAGED_DIR)/Timberborn.TimeSystem.dll" || (echo "Missing Timberborn.TimeSystem.dll" && exit 1)
+	@test -f "$(MANAGED_DIR)/Timberborn.CameraSystem.dll" || (echo "Missing Timberborn.CameraSystem.dll" && exit 1)
 	@mkdir -p "$(MODS_DIR)"
 	@echo "Timberborn app: $(GAME_APP)"
 	@echo "Managed DLLs: $(MANAGED_DIR)"
@@ -50,10 +53,10 @@ package: build
 	@find "$(PACKAGE_DIR)" -maxdepth 2 -type f -print
 
 install: package
-	rm -rf "$(MODS_DIR)/HelloWorld"
+	rm -rf "$(MODS_DIR)/HelloWorld" "$(MODS_DIR)/AiHarness"
 	mkdir -p "$(MODS_DIR)"
-	cp -R "$(PACKAGE_DIR)" "$(MODS_DIR)/HelloWorld"
-	@find "$(MODS_DIR)/HelloWorld" -maxdepth 2 -type f -print
+	cp -R "$(PACKAGE_DIR)" "$(MODS_DIR)/AiHarness"
+	@find "$(MODS_DIR)/AiHarness" -maxdepth 2 -type f -print
 
 launch:
 	open -a Steam
