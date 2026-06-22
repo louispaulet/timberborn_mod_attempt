@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+
+DEFAULT_BASE_URL = "http://localhost:8080"
+
+
+def activate_timberborn():
+    subprocess.run(
+        ["osascript", "-e", 'tell application "Timberborn" to activate'],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def request_json(base_url, path, params=None, method="GET"):
+    activate_timberborn()
+    time.sleep(0.15)
+    query = urllib.parse.urlencode({k: v for k, v in (params or {}).items() if v is not None})
+    url = base_url.rstrip("/") + path
+    if query:
+        url = url + "?" + query
+
+    request = urllib.request.Request(url, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=8) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8")
+        try:
+            return json.loads(body)
+        except json.JSONDecodeError:
+            return {"ok": False, "error": f"HTTP {error.code}: {body}"}
+    except urllib.error.URLError as error:
+        return {"ok": False, "error": f"Could not reach Timberborn AI Harness at {base_url}: {error.reason}"}
+
+
+def show_menu(base_url, interaction_id, menu_id, question, skill_id, menu_path, context_hash, options):
+    if len(options) != 4:
+        raise ValueError("Menus must have exactly four options.")
+
+    params = {
+        "interactionId": interaction_id,
+        "menuId": menu_id,
+        "question": question,
+        "skillId": skill_id,
+        "menuPath": menu_path,
+        "contextHash": context_hash,
+    }
+    for index, option in enumerate(options, start=1):
+        params[f"label{index}"] = option["label"]
+        params[f"kind{index}"] = option["kind"]
+        params[f"payload{index}"] = option.get("payload", "")
+    return request_json(base_url, "/api/ai-harness/interaction/show", params, method="POST")
+
+
+def root_menu(base_url, interaction_id):
+    return show_menu(
+        base_url,
+        interaction_id,
+        "pi-root",
+        "Pi: what should I inspect for this settlement?",
+        "water.storage-readiness",
+        "root",
+        "live",
+        [
+            {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
+            {"label": "Game context", "kind": "tool", "payload": "timberborn_game_context"},
+            {"label": "Build tips", "kind": "menu", "payload": "building.pathing"},
+            {"label": "No", "kind": "no", "payload": ""},
+        ],
+    )
+
+
+def build_tips_menu(base_url, interaction_id):
+    return show_menu(
+        base_url,
+        interaction_id,
+        "building-pathing",
+        "Pi: building tips. What should I help with next?",
+        "building.pathing",
+        "building/pathing",
+        "live",
+        [
+            {"label": "Check context", "kind": "tool", "payload": "timberborn_game_context"},
+            {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
+            {"label": "Root menu", "kind": "menu", "payload": "root"},
+            {"label": "Back", "kind": "back", "payload": "root"},
+        ],
+    )
+
+
+def result_menu(base_url, interaction_id, question):
+    return show_menu(
+        base_url,
+        interaction_id,
+        "pi-result",
+        question,
+        "general",
+        "result",
+        "live",
+        [
+            {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
+            {"label": "Game context", "kind": "tool", "payload": "timberborn_game_context"},
+            {"label": "Build tips", "kind": "menu", "payload": "building.pathing"},
+            {"label": "No", "kind": "no", "payload": ""},
+        ],
+    )
+
+
+def summarize_water(payload):
+    data = payload.get("data") or {}
+    return (
+        f"Pi result: {data.get('recommendation', 'water checked')} "
+        f"Water {data.get('availableWater', '?')}/{data.get('waterCapacity', '?')}, "
+        f"{data.get('daysOfWater', '?')} days for {((data.get('population') or {}).get('beavers', '?'))} beavers."
+    )
+
+
+def summarize_context(payload):
+    data = payload.get("data") or {}
+    population = data.get("population") or {}
+    return (
+        f"Pi result: day {data.get('dayNumber', '?')}, speed {data.get('speed', '?')}, "
+        f"{population.get('beavers', '?')} beavers, scope {data.get('scope', '?')}."
+    )
+
+
+def run_tool(base_url, tool):
+    if tool == "timberborn_water_readiness":
+        payload = request_json(base_url, "/api/ai-harness/water-readiness")
+        return payload, summarize_water(payload)
+    if tool == "timberborn_game_context":
+        payload = request_json(base_url, "/api/ai-harness/game-context")
+        return payload, summarize_context(payload)
+    if tool == "timberborn_status":
+        payload = request_json(base_url, "/api/ai-harness/status")
+        data = payload.get("data") or {}
+        return payload, f"Pi result: harness status ok, day {data.get('dayNumber', '?')}, speed {data.get('speed', '?')}."
+    payload = {"ok": False, "error": f"Unsupported companion tool: {tool}"}
+    return payload, payload["error"]
+
+
+def tick(base_url, seen_revision):
+    state = request_json(base_url, "/api/ai-harness/interaction")
+    if not state.get("ok"):
+        print("watch: " + json.dumps(state, sort_keys=True), flush=True)
+        return seen_revision
+
+    data = state["data"]
+    revision = data["revision"]
+    if revision == seen_revision:
+        return seen_revision
+
+    status = data["status"]
+    interaction_id = data["interactionId"]
+    print(f"watch: revision={revision} status={status} button={data.get('lastButton')} menu={data.get('menuId')}", flush=True)
+
+    if status == "requested":
+        print(json.dumps(root_menu(base_url, interaction_id), sort_keys=True), flush=True)
+    elif status == "answerSubmitted":
+        answer = data.get("lastAnswer") or {}
+        payload = answer.get("payload", "")
+        if answer.get("kind") in ("menu", "nav", "navigate") and payload == "building.pathing":
+            print(json.dumps(build_tips_menu(base_url, interaction_id), sort_keys=True), flush=True)
+        elif answer.get("kind") in ("menu", "nav", "navigate"):
+            print(json.dumps(root_menu(base_url, interaction_id), sort_keys=True), flush=True)
+    elif status == "toolRequested":
+        answer = data.get("lastAnswer") or {}
+        tool = answer.get("payload", "")
+        payload, summary = run_tool(base_url, tool)
+        ok = bool(payload.get("ok"))
+        print(json.dumps(request_json(
+            base_url,
+            "/api/ai-harness/interaction/tool-result",
+            {"tool": tool, "ok": str(ok).lower(), "summary": summary},
+            method="POST",
+        ), sort_keys=True), flush=True)
+        print(json.dumps(result_menu(base_url, interaction_id, summary), sort_keys=True), flush=True)
+
+    return revision
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Run a small polling companion for the Timberborn four-button Pi HUD.")
+    parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
+    parser.add_argument("--poll-seconds", type=float, default=1.0)
+    parser.add_argument("--once", action="store_true", help="Process one state transition and exit.")
+    args = parser.parse_args()
+
+    seen_revision = -1
+    while True:
+      try:
+          seen_revision = tick(args.base_url, seen_revision)
+      except KeyboardInterrupt:
+          return 130
+      except Exception as error:
+          print(f"watch error: {error}", file=sys.stderr, flush=True)
+      if args.once:
+          return 0
+      time.sleep(args.poll_seconds)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

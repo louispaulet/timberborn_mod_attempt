@@ -29,6 +29,7 @@ scripts/timberborn-ai place-water-tank
 scripts/timberborn-ai interaction-request --topic "current situation"
 scripts/timberborn-ai interaction
 scripts/timberborn-ai water-readiness
+scripts/timberborn-pi-companion
 ```
 
 ## Build And Install
@@ -180,6 +181,14 @@ construction.triage
 ```
 
 Deterministic context tools intentionally do simple arithmetic in the mod. For example, `water-readiness` returns `waterPerBeaver`, `waterCapacityPerBeaver`, and `daysOfWater = availableWater / max(1, beavers * 2)` so Pi can advise without recomputing those values from prose.
+
+For local manual testing without starting a full Pi session, run:
+
+```sh
+scripts/timberborn-pi-companion
+```
+
+The companion keeps Timberborn foregrounded, watches the interaction state, posts a four-button menu when `Ask AI` is pressed, runs deterministic tool choices such as water readiness or game context, records the tool result, and posts the next menu.
 
 ## Verify In Timberborn
 

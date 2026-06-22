@@ -135,6 +135,9 @@ namespace LouisPaulet.AiHarness {
         _lastTool = tool ?? "";
         _lastToolOk = ok;
         _lastToolSummary = summary ?? "";
+        _question = string.IsNullOrWhiteSpace(_lastToolSummary)
+            ? "Tool completed: " + _lastTool
+            : _lastToolSummary;
         _lastError = ok ? "" : _lastToolSummary;
         BumpRevisionLocked();
         Debug.Log("[LouisPaulet.AiHarness] Pi interaction tool result: tool=" + _lastTool
