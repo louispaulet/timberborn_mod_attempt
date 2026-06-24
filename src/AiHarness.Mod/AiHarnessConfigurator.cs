@@ -28,6 +28,8 @@ namespace LouisPaulet.AiHarness {
       Bind<AiHarnessGameContext>().AsSingleton();
       Bind<AiHarnessInteractionHud>().AsSingleton();
       Bind<AiHarnessInteractionState>().AsSingleton();
+      Bind<IAiHarnessLog>().To<UnityAiHarnessLog>().AsSingleton();
+      Bind<IInteractionReplayStore>().To<FileInteractionReplayStore>().AsSingleton();
       Bind<IAiHarnessRequestHandler>().To<AiHarnessEndpoint>().AsSingleton();
       Bind<AiHarnessRunner>().AsSingleton();
       Bind<AiHarnessServer>().AsSingleton();

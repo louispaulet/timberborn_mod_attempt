@@ -39,10 +39,11 @@ def focus_timberborn_if_running():
     return True
 
 
-def request_json(base_url, path, params=None, method="GET"):
-    if not focus_timberborn_if_running():
+def request_json(base_url, path, params=None, method="GET", require_game=True):
+    if require_game and not focus_timberborn_if_running():
         return {"ok": False, "error": "Timberborn is not running; refusing to poll or activate it."}
-    time.sleep(0.15)
+    if require_game:
+        time.sleep(0.15)
     query = urllib.parse.urlencode({k: v for k, v in (params or {}).items() if v is not None})
     url = base_url.rstrip("/") + path
     if query:
@@ -62,7 +63,7 @@ def request_json(base_url, path, params=None, method="GET"):
         return {"ok": False, "error": f"Could not reach Timberborn AI Harness at {base_url}: {error.reason}"}
 
 
-def show_menu(base_url, interaction_id, menu_id, question, skill_id, menu_path, context_hash, options):
+def show_menu(base_url, interaction_id, menu_id, question, skill_id, menu_path, context_hash, options, require_game=True):
     if len(options) != 4:
         raise ValueError("Menus must have exactly four options.")
 
@@ -78,7 +79,7 @@ def show_menu(base_url, interaction_id, menu_id, question, skill_id, menu_path, 
         params[f"label{index}"] = option["label"]
         params[f"kind{index}"] = option["kind"]
         params[f"payload{index}"] = option.get("payload", "")
-    return request_json(base_url, "/api/ai-harness/interaction/show", params, method="POST")
+    return request_json(base_url, "/api/ai-harness/interaction/show", params, method="POST", require_game=require_game)
 
 
 def read_refresh_count(data):
@@ -96,7 +97,7 @@ def refresh_context(refresh_count):
     return "live" if refresh_count <= 0 else f"live-refresh-{refresh_count}"
 
 
-def root_menu(base_url, interaction_id, refresh_count=0):
+def root_menu(base_url, interaction_id, refresh_count=0, require_game=True):
     variants = [
         (
             "Pi: what should I inspect for this settlement?",
@@ -136,10 +137,11 @@ def root_menu(base_url, interaction_id, refresh_count=0):
         "root",
         refresh_context(refresh_count),
         options,
+        require_game=require_game,
     )
 
 
-def build_tips_menu(base_url, interaction_id, refresh_count=0):
+def build_tips_menu(base_url, interaction_id, refresh_count=0, require_game=True):
     variants = [
         (
             "Pi: building tips. What should I help with next?",
@@ -179,10 +181,11 @@ def build_tips_menu(base_url, interaction_id, refresh_count=0):
         "building/pathing",
         refresh_context(refresh_count),
         options,
+        require_game=require_game,
     )
 
 
-def result_menu(base_url, interaction_id, question, refresh_count=0):
+def result_menu(base_url, interaction_id, question, refresh_count=0, require_game=True):
     variants = [
         [
             {"label": "Water readiness", "kind": "tool", "payload": "timberborn_water_readiness"},
@@ -212,18 +215,19 @@ def result_menu(base_url, interaction_id, question, refresh_count=0):
         "result",
         refresh_context(refresh_count),
         variants[refresh_count % len(variants)],
+        require_game=require_game,
     )
 
 
-def refreshed_menu(base_url, data):
+def refreshed_menu(base_url, data, require_game=True):
     interaction_id = data["interactionId"]
     refresh_count = read_refresh_count(data)
     menu_path = (data.get("menuPath") or "root").lower()
     if menu_path.startswith("building"):
-        return build_tips_menu(base_url, interaction_id, refresh_count)
+        return build_tips_menu(base_url, interaction_id, refresh_count, require_game=require_game)
     if menu_path == "result":
-        return result_menu(base_url, interaction_id, "Pi: refreshed choices. Which path feels better?", refresh_count)
-    return root_menu(base_url, interaction_id, refresh_count)
+        return result_menu(base_url, interaction_id, "Pi: refreshed choices. Which path feels better?", refresh_count, require_game=require_game)
+    return root_menu(base_url, interaction_id, refresh_count, require_game=require_game)
 
 
 def summarize_water(payload):
@@ -244,23 +248,23 @@ def summarize_context(payload):
     )
 
 
-def run_tool(base_url, tool):
+def run_tool(base_url, tool, require_game=True):
     if tool == "timberborn_water_readiness":
-        payload = request_json(base_url, "/api/ai-harness/water-readiness")
+        payload = request_json(base_url, "/api/ai-harness/water-readiness", require_game=require_game)
         return payload, summarize_water(payload)
     if tool == "timberborn_game_context":
-        payload = request_json(base_url, "/api/ai-harness/game-context")
+        payload = request_json(base_url, "/api/ai-harness/game-context", require_game=require_game)
         return payload, summarize_context(payload)
     if tool == "timberborn_status":
-        payload = request_json(base_url, "/api/ai-harness/status")
+        payload = request_json(base_url, "/api/ai-harness/status", require_game=require_game)
         data = payload.get("data") or {}
         return payload, f"Pi result: harness status ok, day {data.get('dayNumber', '?')}, speed {data.get('speed', '?')}."
     payload = {"ok": False, "error": f"Unsupported companion tool: {tool}"}
     return payload, payload["error"]
 
 
-def tick(base_url, seen_revision):
-    state = request_json(base_url, "/api/ai-harness/interaction")
+def tick(base_url, seen_revision, require_game=True):
+    state = request_json(base_url, "/api/ai-harness/interaction", require_game=require_game)
     if not state.get("ok"):
         print("watch: " + json.dumps(state, sort_keys=True), flush=True)
         return seen_revision
@@ -275,30 +279,31 @@ def tick(base_url, seen_revision):
     print(f"watch: revision={revision} status={status} button={data.get('lastButton')} menu={data.get('menuId')}", flush=True)
 
     if status == "requested":
-        print(json.dumps(root_menu(base_url, interaction_id), sort_keys=True), flush=True)
+        print(json.dumps(root_menu(base_url, interaction_id, require_game=require_game), sort_keys=True), flush=True)
     elif status == "refreshRequested":
-        print(json.dumps(refreshed_menu(base_url, data), sort_keys=True), flush=True)
+        print(json.dumps(refreshed_menu(base_url, data, require_game=require_game), sort_keys=True), flush=True)
     elif status == "answerSubmitted":
         answer = data.get("lastAnswer") or {}
         payload = answer.get("payload", "")
         refresh_count = read_refresh_count(data)
         if answer.get("kind") in ("menu", "nav", "navigate") and payload == "building.pathing":
-            print(json.dumps(build_tips_menu(base_url, interaction_id, refresh_count), sort_keys=True), flush=True)
+            print(json.dumps(build_tips_menu(base_url, interaction_id, refresh_count, require_game=require_game), sort_keys=True), flush=True)
         elif answer.get("kind") in ("menu", "nav", "navigate"):
-            print(json.dumps(root_menu(base_url, interaction_id, refresh_count), sort_keys=True), flush=True)
+            print(json.dumps(root_menu(base_url, interaction_id, refresh_count, require_game=require_game), sort_keys=True), flush=True)
     elif status == "toolRequested":
         answer = data.get("lastAnswer") or {}
         tool = answer.get("payload", "")
         refresh_count = read_refresh_count(data)
-        payload, summary = run_tool(base_url, tool)
+        payload, summary = run_tool(base_url, tool, require_game=require_game)
         ok = bool(payload.get("ok"))
         print(json.dumps(request_json(
             base_url,
             "/api/ai-harness/interaction/tool-result",
             {"tool": tool, "ok": str(ok).lower(), "summary": summary},
             method="POST",
+            require_game=require_game,
         ), sort_keys=True), flush=True)
-        print(json.dumps(result_menu(base_url, interaction_id, summary, refresh_count), sort_keys=True), flush=True)
+        print(json.dumps(result_menu(base_url, interaction_id, summary, refresh_count, require_game=require_game), sort_keys=True), flush=True)
 
     return revision
 
@@ -308,19 +313,21 @@ def main():
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL)
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--once", action="store_true", help="Process one state transition and exit.")
+    parser.add_argument("--allow-no-game", action="store_true", help="Allow polling a fake/non-game harness without focusing Timberborn.")
     args = parser.parse_args()
 
-    if not is_timberborn_running():
+    require_game = not args.allow_no_game
+    if require_game and not is_timberborn_running():
         print("watch: Timberborn is not running; companion loop refused to start.", file=sys.stderr, flush=True)
         return 2
 
     seen_revision = -1
     while True:
-        if not is_timberborn_running():
+        if require_game and not is_timberborn_running():
             print("watch: Timberborn is no longer running; companion loop exiting.", file=sys.stderr, flush=True)
             return 2
         try:
-            seen_revision = tick(args.base_url, seen_revision)
+            seen_revision = tick(args.base_url, seen_revision, require_game=require_game)
         except KeyboardInterrupt:
             return 130
         except Exception as error:

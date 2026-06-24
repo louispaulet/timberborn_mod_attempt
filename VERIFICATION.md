@@ -1,5 +1,31 @@
 # Verification
 
+## Fast Loop Verification
+
+Verified on 2026-06-25 CEST without launching Timberborn.
+
+### Commands
+
+```sh
+make verify-fast
+```
+
+### Results
+
+- `make test-fast` restored and ran `tests/AiHarness.Core.Tests` with 11 passing xUnit tests.
+- `make smoke-fake` started `scripts/fake-timberborn-harness` on `http://127.0.0.1:18080`, exercised `scripts/timberborn-ai` and `scripts/timberborn-pi-companion --allow-no-game --once`, verified deterministic water/building endpoints, and confirmed invalid placement returns `"ok": false`.
+- `make build` compiled `AiHarness.Core` and `AiHarness.Mod` against the installed Timberborn managed assemblies.
+
+The fast path is now:
+
+```sh
+make test-fast
+make smoke-fake
+make build
+```
+
+Use `make verify-fast` to run all three. Use `make smoke-live` only when Timberborn is already running with the mod loaded; it does not launch the game.
+
 Verified on 2026-06-22 11:39:35 CEST with Timberborn `v1.1.0.2-3c063a9-xsm` running from the Steam install.
 
 ## Commands
@@ -21,6 +47,7 @@ The installed mod folder contained:
 ```text
 /Users/louispaulet/Documents/Timberborn/Mods/AiHarness/manifest.json
 /Users/louispaulet/Documents/Timberborn/Mods/AiHarness/Code.dll
+/Users/louispaulet/Documents/Timberborn/Mods/AiHarness/AiHarness.Core.dll
 ```
 
 ## Game Check

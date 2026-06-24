@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using UnityEngine;
 
 namespace LouisPaulet.AiHarness {
   public class AiHarnessInteractionState {
 
-    private const string ModVersion = "0.1.0";
+    public const string ModVersion = "0.1.0";
 
     private readonly object _lock = new object();
+    private readonly IAiHarnessLog _log;
+    private readonly IInteractionReplayStore _replayStore;
 
     private string _status = "idle";
     private string _interactionId = "";
@@ -29,6 +29,11 @@ namespace LouisPaulet.AiHarness {
     private int _refreshRequests;
     private int _revision;
     private AiHarnessInteractionOption[] _options = DefaultOptions();
+
+    public AiHarnessInteractionState(IAiHarnessLog log, IInteractionReplayStore replayStore) {
+      _log = log;
+      _replayStore = replayStore;
+    }
 
     public int Revision {
       get {
@@ -65,7 +70,7 @@ namespace LouisPaulet.AiHarness {
         _refreshRequests = 0;
         _options = RequestedOptions();
         BumpRevisionLocked();
-        Debug.Log("[LouisPaulet.AiHarness] Pi interaction requested: " + _interactionId + " topic=" + _topic);
+        _log.Info("Pi interaction requested: " + _interactionId + " topic=" + _topic);
         return SnapshotDataLocked();
       }
     }
@@ -87,7 +92,7 @@ namespace LouisPaulet.AiHarness {
         _refreshRequests++;
         _options = RefreshRequestedOptions();
         BumpRevisionLocked();
-        Debug.Log("[LouisPaulet.AiHarness] Pi interaction refresh requested: " + _interactionId
+        _log.Info("Pi interaction refresh requested: " + _interactionId
             + " refresh=" + _refreshRequests.ToString(CultureInfo.InvariantCulture));
         return SnapshotDataLocked();
       }
@@ -130,7 +135,7 @@ namespace LouisPaulet.AiHarness {
         _lastToolSummary = "";
         BumpRevisionLocked();
         WriteReplayLocked();
-        Debug.Log("[LouisPaulet.AiHarness] Pi interaction menu shown: " + _interactionId + " menu=" + _menuId);
+        _log.Info("Pi interaction menu shown: " + _interactionId + " menu=" + _menuId);
         return SnapshotDataLocked();
       }
     }
@@ -148,7 +153,7 @@ namespace LouisPaulet.AiHarness {
             ? "toolRequested"
             : "answerSubmitted";
         BumpRevisionLocked();
-        Debug.Log("[LouisPaulet.AiHarness] Pi interaction answer: button=" + button.ToString(CultureInfo.InvariantCulture)
+        _log.Info("Pi interaction answer: button=" + button.ToString(CultureInfo.InvariantCulture)
             + " kind=" + option.Kind + " label=" + option.Label);
         return SnapshotDataLocked();
       }
@@ -165,7 +170,7 @@ namespace LouisPaulet.AiHarness {
             : _lastToolSummary;
         _lastError = ok ? "" : _lastToolSummary;
         BumpRevisionLocked();
-        Debug.Log("[LouisPaulet.AiHarness] Pi interaction tool result: tool=" + _lastTool
+        _log.Info("Pi interaction tool result: tool=" + _lastTool
             + " ok=" + ok.ToString(CultureInfo.InvariantCulture));
         return SnapshotDataLocked();
       }
@@ -190,12 +195,60 @@ namespace LouisPaulet.AiHarness {
         _refreshRequests = 0;
         _options = DefaultOptions();
         BumpRevisionLocked();
-        Debug.Log("[LouisPaulet.AiHarness] Pi interaction cleared.");
+        _log.Info("Pi interaction cleared.");
         return SnapshotDataLocked();
       }
     }
 
-    private object SnapshotDataLocked() {
+    public static string ValidateMenu(string question, AiHarnessInteractionOption[] options) {
+      if (string.IsNullOrWhiteSpace(question)) {
+        return "Interaction menu requires a question.";
+      }
+
+      if (options.Length != 4) {
+        return "Interaction menu must provide exactly four options.";
+      }
+
+      bool hasTool = false;
+      bool hasNavigation = false;
+      bool hasBackOrNo = false;
+      bool hasYes = false;
+      bool hasNo = false;
+      foreach (AiHarnessInteractionOption option in options) {
+        if (string.IsNullOrWhiteSpace(option.Label)) {
+          return "Interaction menu option labels cannot be empty.";
+        }
+
+        string kind = AiHarnessText.Normalize(option.Kind);
+        string label = AiHarnessText.Normalize(option.Label);
+        hasTool = hasTool || kind == "tool";
+        hasNavigation = hasNavigation || kind == "menu" || kind == "nav" || kind == "navigate";
+        hasBackOrNo = hasBackOrNo || kind == "back" || kind == "cancel" || kind == "no"
+            || label.Contains("back") || label.Contains("cancel") || label == "no";
+        hasYes = hasYes || kind == "yes" || label == "yes" || label.StartsWith("yes");
+        hasNo = hasNo || kind == "no" || label == "no" || label.StartsWith("no");
+      }
+
+      bool confirmation = options.Any(option => AiHarnessText.Normalize(option.Kind) == "confirm");
+      if (confirmation && (!hasYes || !hasNo)) {
+        return "Confirmation menus must include yes and no choices.";
+      }
+
+      if (!confirmation && (!hasTool || !hasNavigation || !hasBackOrNo)) {
+        return "Non-confirmation menus must include at least one tool option, one menu/navigation option, and one back/cancel/no option.";
+      }
+
+      return "";
+    }
+
+    public static string ReplayKey(string skillId, string menuPath, string contextHash) {
+      return SanitizeReplayPart(ModVersion)
+          + "-" + SanitizeReplayPart(skillId)
+          + "-" + SanitizeReplayPart(menuPath)
+          + "-" + SanitizeReplayPart(contextHash);
+    }
+
+    private Dictionary<string, object> SnapshotDataLocked() {
       return new Dictionary<string, object> {
         { "status", _status },
         { "interactionId", _interactionId },
@@ -240,17 +293,12 @@ namespace LouisPaulet.AiHarness {
     }
 
     private string ReplayKeyLocked() {
-      return SanitizeReplayPart(ModVersion)
-          + "-" + SanitizeReplayPart(_skillId)
-          + "-" + SanitizeReplayPart(_menuPath)
-          + "-" + SanitizeReplayPart(_contextHash);
+      return ReplayKey(_skillId, _menuPath, _contextHash);
     }
 
     private void WriteReplayLocked() {
       try {
         string replayKey = ReplayKeyLocked();
-        string path = AiHarnessPaths.GetGeneratedFilePath("interactions", replayKey, ".json");
-        Directory.CreateDirectory(Path.GetDirectoryName(path));
         var payload = new Dictionary<string, object> {
           { "gameVersion", "runtime" },
           { "modVersion", ModVersion },
@@ -261,51 +309,10 @@ namespace LouisPaulet.AiHarness {
           { "createdAtUtc", DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture) },
           { "interaction", SnapshotDataLocked() }
         };
-        File.WriteAllText(path, AiHarnessJson.SerializeObject(payload));
+        _replayStore.Save(payload);
       } catch (Exception exception) {
-        Debug.LogError("[LouisPaulet.AiHarness] Failed to write Pi interaction replay: " + exception.Message);
+        _log.Error("Failed to write Pi interaction replay: " + exception.Message);
       }
-    }
-
-    private static string ValidateMenu(string question, AiHarnessInteractionOption[] options) {
-      if (string.IsNullOrWhiteSpace(question)) {
-        return "Interaction menu requires a question.";
-      }
-
-      if (options.Length != 4) {
-        return "Interaction menu must provide exactly four options.";
-      }
-
-      bool hasTool = false;
-      bool hasNavigation = false;
-      bool hasBackOrNo = false;
-      bool hasYes = false;
-      bool hasNo = false;
-      foreach (AiHarnessInteractionOption option in options) {
-        if (string.IsNullOrWhiteSpace(option.Label)) {
-          return "Interaction menu option labels cannot be empty.";
-        }
-
-        string kind = Normalize(option.Kind);
-        string label = Normalize(option.Label);
-        hasTool = hasTool || kind == "tool";
-        hasNavigation = hasNavigation || kind == "menu" || kind == "nav" || kind == "navigate";
-        hasBackOrNo = hasBackOrNo || kind == "back" || kind == "cancel" || kind == "no"
-            || label.Contains("back") || label.Contains("cancel") || label == "no";
-        hasYes = hasYes || kind == "yes" || label == "yes" || label.StartsWith("yes");
-        hasNo = hasNo || kind == "no" || label == "no" || label.StartsWith("no");
-      }
-
-      bool confirmation = options.Any(option => Normalize(option.Kind) == "confirm");
-      if (confirmation && (!hasYes || !hasNo)) {
-        return "Confirmation menus must include yes and no choices.";
-      }
-
-      if (!confirmation && (!hasTool || !hasNavigation || !hasBackOrNo)) {
-        return "Non-confirmation menus must include at least one tool option, one menu/navigation option, and one back/cancel/no option.";
-      }
-
-      return "";
     }
 
     private static AiHarnessInteractionOption[] DefaultOptions() {
@@ -345,14 +352,6 @@ namespace LouisPaulet.AiHarness {
           .ToArray();
       string sanitized = new string(characters).Trim('-');
       return string.IsNullOrWhiteSpace(sanitized) ? "none" : sanitized;
-    }
-
-    private static string Normalize(string value) {
-      if (string.IsNullOrWhiteSpace(value)) {
-        return "";
-      }
-
-      return new string(value.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
     }
 
   }

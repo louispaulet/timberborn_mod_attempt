@@ -18,6 +18,10 @@ This project follows the official Timberborn 1.0 modding pipeline. It builds a C
 ```sh
 make verify-env
 make bootstrap
+make test-fast
+make smoke-fake
+make verify-fast
+make smoke-live
 make build
 make package
 make install
@@ -33,7 +37,32 @@ scripts/timberborn-ai interaction-refresh
 scripts/timberborn-ai interaction
 scripts/timberborn-ai water-readiness
 scripts/timberborn-pi-companion
+scripts/fake-timberborn-harness
 ```
+
+## Fast Test Loop
+
+Use the layered loop for feature work:
+
+```sh
+make test-fast
+make smoke-fake
+make build
+```
+
+`make test-fast` runs Unity-free xUnit tests for the core logic: JSON/response shape, four-button interaction state, menu validation, replay keys, deterministic water math, and building alias matching.
+
+`make smoke-fake` starts `scripts/fake-timberborn-harness` on `http://127.0.0.1:18080`, drives the checked-in CLI and companion once, verifies deterministic water/building endpoints, and confirms an invalid placement returns controlled JSON failure. It does not launch Timberborn.
+
+`make verify-fast` runs `test-fast`, `smoke-fake`, and `build` together. This should be the default check before installing or relaunching the game.
+
+When Timberborn is already running with the mod loaded, use:
+
+```sh
+make smoke-live
+```
+
+`make smoke-live` refuses to launch the game. It checks the live localhost harness, creates a disposable settlement only if the harness reports it is still at the main menu, exercises the four-button interaction endpoints, verifies deterministic water readiness, and checks that a bad placement request fails without breaking follow-up status.
 
 ## Build And Install
 
@@ -44,7 +73,7 @@ make package
 make install
 ```
 
-`make package` creates `dist/AiHarness` with the mod manifest and DLL. `make install` copies that folder to `/Users/louispaulet/Documents/Timberborn/Mods/AiHarness`.
+`make package` creates `dist/AiHarness` with the mod manifest, `Code.dll`, and `AiHarness.Core.dll`. `make install` copies that folder to `/Users/louispaulet/Documents/Timberborn/Mods/AiHarness`.
 
 ## Harness Commands
 
@@ -203,6 +232,8 @@ make down
 ```
 
 ## Verify In Timberborn
+
+Use this only for final integration, DLL reload, Mod Manager, HUD rendering, screenshots, or behavior that needs real Timberborn services.
 
 1. Run `make install`.
 2. Run `make launch`, or open Steam and start Timberborn manually without save-loading launch parameters.

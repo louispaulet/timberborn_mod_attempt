@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../AiHarness.Core/AiHarness.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Bindito.Core">
       <HintPath>$(TimberbornManagedDir)/Bindito.Core.dll</HintPath>
       <Private>false</Private>

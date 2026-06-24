@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Timberborn.BlockObjectTools;
 using Timberborn.BlockSystem;
 using Timberborn.CameraSystem;
@@ -16,23 +15,6 @@ namespace LouisPaulet.AiHarness {
   public class AiHarnessBuildingPlacement {
 
     private const int DefaultSearchRadius = 16;
-
-    private static readonly string[] WaterTankAliases = {
-      "watertank",
-      "waterstorage",
-      "waterbarrel",
-      "tank"
-    };
-
-    private static readonly Dictionary<string, string[]> BuildingAliasKeywords = new Dictionary<string, string[]> {
-      { "path", new[] { "path" } },
-      { "paths", new[] { "path" } },
-      { "road", new[] { "path" } },
-      { "stairs", new[] { "stair" } },
-      { "stair", new[] { "stair" } },
-      { "platform", new[] { "platform" } },
-      { "platforms", new[] { "platform" } }
-    };
 
     private readonly BlockObjectPlacerService _blockObjectPlacerService;
     private readonly CameraService _cameraService;
@@ -54,15 +36,11 @@ namespace LouisPaulet.AiHarness {
     }
 
     public object ListBuildings(string? query) {
-      string normalizedQuery = Normalize(query ?? "");
-      IEnumerable<PlaceableBlockObjectSpec> templates = GetPlaceableTemplates();
-      if (!string.IsNullOrWhiteSpace(normalizedQuery)) {
-        templates = templates.Where(template => SearchText(template).Contains(normalizedQuery));
-      }
+      List<TemplateEntry> templates = TemplateEntries();
 
       return new Dictionary<string, object> {
         { "query", query ?? "" },
-        { "buildings", templates.Take(100).Select(BuildingData).ToArray() }
+        { "buildings", AiHarnessBuildingCatalog.Filter(templates.Select(entry => entry.Template), query).Select(template => template.ToData()).ToArray() }
       };
     }
 
@@ -174,54 +152,9 @@ namespace LouisPaulet.AiHarness {
     }
 
     private PlaceableBlockObjectSpec ResolveTemplate(string templateQuery) {
-      string normalizedQuery = Normalize(templateQuery);
-      if (string.IsNullOrWhiteSpace(normalizedQuery)) {
-        normalizedQuery = "watertank";
-      }
-
-      List<PlaceableBlockObjectSpec> templates = GetPlaceableTemplates().ToList();
-      PlaceableBlockObjectSpec? exactMatch = templates.FirstOrDefault(template => NormalizedNames(template).Any(name => name == normalizedQuery));
-      if (exactMatch != null) {
-        return exactMatch;
-      }
-
-      if (WaterTankAliases.Contains(normalizedQuery)) {
-        PlaceableBlockObjectSpec? waterTank = templates
-            .Where(IsWaterTankCandidate)
-            .OrderBy(WaterTankSortKey)
-            .ThenBy(template => template.ToolOrder)
-            .FirstOrDefault();
-        if (waterTank != null) {
-          return waterTank;
-        }
-      }
-
-      if (BuildingAliasKeywords.TryGetValue(normalizedQuery, out string[] aliasKeywords)) {
-        PlaceableBlockObjectSpec? aliasMatch = templates
-            .Where(template => MatchesAliasKeywords(template, aliasKeywords))
-            .OrderBy(template => template.ToolOrder)
-            .ThenBy(TemplateName)
-            .FirstOrDefault();
-        if (aliasMatch != null) {
-          return aliasMatch;
-        }
-      }
-
-      List<PlaceableBlockObjectSpec> matches = templates
-          .Where(template => SearchText(template).Contains(normalizedQuery))
-          .OrderBy(template => template.ToolOrder)
-          .Take(5)
-          .ToList();
-      if (matches.Count == 1) {
-        return matches[0];
-      }
-
-      if (matches.Count > 1) {
-        throw new InvalidOperationException("Building template query is ambiguous: " + templateQuery
-            + ". Matches: " + string.Join(", ", matches.Select(TemplateName).ToArray()));
-      }
-
-      throw new InvalidOperationException("Building template not found: " + templateQuery);
+      List<TemplateEntry> entries = TemplateEntries();
+      AiHarnessBuildingTemplate template = AiHarnessBuildingCatalog.Resolve(entries.Select(entry => entry.Template), templateQuery);
+      return entries.First(entry => ReferenceEquals(entry.Template, template)).Spec;
     }
 
     private IEnumerable<PlaceableBlockObjectSpec> GetPlaceableTemplates() {
@@ -233,40 +166,8 @@ namespace LouisPaulet.AiHarness {
           .ThenBy(TemplateName);
     }
 
-    private static bool IsWaterTankCandidate(PlaceableBlockObjectSpec template) {
-      string searchText = SearchText(template);
-      return (searchText.Contains("water") && (searchText.Contains("tank") || searchText.Contains("barrel") || searchText.Contains("storage")))
-          || (Normalize(template.ToolGroupId ?? "") == "storage" && searchText.Contains("tank"));
-    }
-
-    private static int WaterTankSortKey(PlaceableBlockObjectSpec template) {
-      string searchText = SearchText(template);
-      if (searchText.Contains("small")) {
-        return 0;
-      }
-
-      if (searchText.Contains("medium")) {
-        return 1;
-      }
-
-      return 2;
-    }
-
-    private static bool MatchesAliasKeywords(PlaceableBlockObjectSpec template, string[] keywords) {
-      string searchText = SearchText(template);
-      return keywords.All(keyword => searchText.Contains(keyword));
-    }
-
     private static Dictionary<string, object> BuildingData(PlaceableBlockObjectSpec template) {
-      LabeledEntitySpec? label = template.GetSpec<LabeledEntitySpec>();
-      return new Dictionary<string, object> {
-        { "templateName", TemplateName(template) },
-        { "blueprintName", template.Blueprint.Name ?? "" },
-        { "displayNameLocKey", label?.DisplayNameLocKey ?? "" },
-        { "descriptionLocKey", label?.DescriptionLocKey ?? "" },
-        { "toolGroupId", template.ToolGroupId ?? "" },
-        { "toolOrder", template.ToolOrder }
-      };
+      return BuildingTemplate(template).ToData();
     }
 
     private static Dictionary<string, object> PlacementData(Placement placement) {
@@ -279,27 +180,23 @@ namespace LouisPaulet.AiHarness {
       };
     }
 
-    private static string SearchText(PlaceableBlockObjectSpec template) {
-      var builder = new StringBuilder();
-      foreach (string name in NormalizedNames(template)) {
-        builder.Append(name);
-        builder.Append(' ');
-      }
-
-      builder.Append(Normalize(template.ToolGroupId ?? ""));
-      return builder.ToString();
-    }
-
-    private static IEnumerable<string> NormalizedNames(PlaceableBlockObjectSpec template) {
-      LabeledEntitySpec? label = template.GetSpec<LabeledEntitySpec>();
-      yield return Normalize(TemplateName(template));
-      yield return Normalize(template.Blueprint.Name ?? "");
-      yield return Normalize(label?.DisplayNameLocKey ?? "");
-      yield return Normalize(label?.DescriptionLocKey ?? "");
-    }
-
     private static string TemplateName(PlaceableBlockObjectSpec template) {
       return template.GetSpec<TemplateSpec>()?.TemplateName ?? template.Blueprint.Name ?? "";
+    }
+
+    private List<TemplateEntry> TemplateEntries() {
+      return GetPlaceableTemplates().Select(template => new TemplateEntry(template, BuildingTemplate(template))).ToList();
+    }
+
+    private static AiHarnessBuildingTemplate BuildingTemplate(PlaceableBlockObjectSpec template) {
+      LabeledEntitySpec? label = template.GetSpec<LabeledEntitySpec>();
+      return new AiHarnessBuildingTemplate(
+          TemplateName(template),
+          template.Blueprint.Name ?? "",
+          label?.DisplayNameLocKey ?? "",
+          label?.DescriptionLocKey ?? "",
+          template.ToolGroupId ?? "",
+          template.ToolOrder);
     }
 
     private static string FormatPlacement(Placement placement) {
@@ -310,19 +207,16 @@ namespace LouisPaulet.AiHarness {
           + ", flipped=" + placement.FlipMode.IsFlipped;
     }
 
-    private static string Normalize(string value) {
-      if (string.IsNullOrWhiteSpace(value)) {
-        return "";
+    private sealed class TemplateEntry {
+
+      public TemplateEntry(PlaceableBlockObjectSpec spec, AiHarnessBuildingTemplate template) {
+        Spec = spec;
+        Template = template;
       }
 
-      var builder = new StringBuilder(value.Length);
-      foreach (char character in value.ToLowerInvariant()) {
-        if (char.IsLetterOrDigit(character)) {
-          builder.Append(character);
-        }
-      }
+      public PlaceableBlockObjectSpec Spec { get; }
+      public AiHarnessBuildingTemplate Template { get; }
 
-      return builder.ToString();
     }
 
   }
