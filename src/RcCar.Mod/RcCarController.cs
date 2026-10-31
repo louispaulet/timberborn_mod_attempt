@@ -165,6 +165,7 @@ namespace LouisPaulet.RcCar {
       GameObject visual = new GameObject("Iron Teeth RC Car model");
       visual.transform.SetParent(_car.transform, false);
       visual.transform.localPosition = CarVisualOffset;
+      visual.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
       MeshFilter meshFilter = visual.AddComponent<MeshFilter>();
       MeshRenderer meshRenderer = visual.AddComponent<MeshRenderer>();
       try {
