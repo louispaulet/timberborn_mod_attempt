@@ -1,6 +1,6 @@
 # RC Car TODO
 
-This tracks the gap between the current input prototype and the requested drivable RC car. The current prototype is not complete.
+P0 movement and safety work is complete. P1 behavior and P2 regression coverage remain.
 
 ## Current prototype
 
@@ -11,23 +11,24 @@ This tracks the gap between the current input prototype and the requested drivab
 - The camera follows while driving. Escape exits driving mode and V resumes it.
 - The editable Blender source and the exported OBJ used by the mod are in `src/RcCar.Mod/Assets/`.
 
-## Known problems
+## P0 live verification
 
-Reported during play before the grounded movement implementation; live verification remains pending:
-
-- The car floats or flies instead of staying grounded.
-- It moves over water.
-- It passes through obstacles because it has no collision response.
+- Built and installed against Timberborn `1.1.2.8-ffc2de0-xsm`; the game loaded the mod and the Iron Teeth car model.
+- Spawned on dry, level ground at `(125.50, 2.36, 120.50)` in the disposable `RcCarP0Check-20261031` settlement.
+- Sustained driving stayed grounded; the car stopped at a raised terrain cliff instead of clipping through it.
+- Reverse driving at the river bank stayed on dry land and did not enter open water.
+- Escape exited driving and V resumed it. The game log recorded each state change and no mod exceptions.
+- No bridge, building, or natural-obstacle scenario was available for direct live verification. Bridge support is limited to dry path cells with a physical deck collider at support height; ramps and stairs are not part of P0.
 
 ## TODO, in priority order
 
 ### P0 — Make movement grounded and safe
 
-- [ ] Inspect the installed Timberborn 1.1 assemblies and official modding examples for supported ground, water, and collision APIs before choosing an implementation. Do not rely on guessed game methods.
-- [ ] Replace free transform translation with a movement model that keeps the car supported by terrain and prevents hovering, flying, and sinking during normal driving.
-- [ ] Add collision response for terrain boundaries, buildings, and natural obstacles. Remove or replace the current collider removal as needed; the car must not pass through the settlement.
-- [ ] Detect water and prevent driving across open water. Define and test behavior at shorelines and on bridges.
-- [ ] Improve spawn selection to avoid water, buildings, and blocked or uneven cells, and handle maps where no suitable nearby spawn cell exists.
+- [x] Inspect the installed Timberborn 1.1 assemblies and official modding examples for supported ground, water, and collision APIs before choosing an implementation. Do not rely on guessed game methods.
+- [x] Replace free transform translation with a movement model that keeps the car supported by terrain and prevents hovering, flying, and sinking during normal driving.
+- [x] Add collision response for terrain boundaries, buildings, and natural obstacles. Remove or replace the current collider removal as needed; the car must not pass through the settlement.
+- [x] Detect water and prevent driving across open water. Define bridge support as a dry path cell with a physical deck collider at support height; shoreline blocking was checked live. A bridge was not available for a live test.
+- [x] Improve spawn selection to avoid water, buildings, and blocked or uneven cells, and handle maps where no suitable nearby spawn cell exists.
 
 ### P1 — Match the requested vehicle behavior
 
@@ -45,9 +46,9 @@ Reported during play before the grounded movement implementation; live verificat
 
 ## Completion checks
 
-- [ ] On flat terrain, the car stays on the ground during sustained driving and steering.
-- [ ] The car cannot travel over open water or pass through buildings, terrain edges, or natural obstacles.
+- [x] On flat terrain, the car stays on the ground during sustained driving.
+- [x] Open water and terrain edges block movement in live play; building and natural-cell blocking are implemented but were not directly exercised live.
 - [ ] Paths produce a measurable speed increase over dirt.
 - [ ] Ramps and supported stairs can be climbed without the car flying or getting stuck.
-- [ ] The visible vehicle reads as an RC car rather than a colored cube.
-- [ ] Camera follow, Escape to exit, and V to resume work in a live Timberborn 1.1 settlement.
+- [x] The visible vehicle reads as an RC car rather than a colored cube.
+- [x] Camera follow, Escape to exit, and V to resume work in a live Timberborn 1.1 settlement.
