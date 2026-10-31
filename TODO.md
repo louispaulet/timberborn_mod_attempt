@@ -5,19 +5,19 @@ This tracks the gap between the current input prototype and the requested drivab
 ## Current prototype
 
 - The official mod manifest, build, package, and install path are in place.
-- A small orange Unity cube spawns near the map center. Spawn selection checks only that the terrain cell and its four adjacent cells share a height.
-- WASD applies eased acceleration, reverse, and steering by changing the cube's transform directly. This is movement input, not grounded vehicle motion.
+- The spawned vehicle now loads an original Blender-authored Iron Teeth-style RC car mesh embedded in the mod assembly.
+- Spawn search checks dry, level terrain, water, blocked game cells, and physics overlaps near the map center.
+- WASD controls eased acceleration, reverse, and steering; terrain support and collider sweeps constrain movement.
 - The camera follows while driving. Escape exits driving mode and V resumes it.
-- The cube's collider is removed. Movement does not query the ground after spawning, test water, or resolve obstacles.
+- The editable Blender source and the exported OBJ used by the mod are in `src/RcCar.Mod/Assets/`.
 
 ## Known problems
 
-Reported during play:
+Reported during play before the grounded movement implementation; live verification remains pending:
 
 - The car floats or flies instead of staying grounded.
 - It moves over water.
 - It passes through obstacles because it has no collision response.
-- It is still an orange cube, not a recognizable RC car.
 
 ## TODO, in priority order
 
@@ -31,7 +31,7 @@ Reported during play:
 
 ### P1 — Match the requested vehicle behavior
 
-- [ ] Replace the orange cube with a recognizable small RC car model, using game assets or a simple original model with visible wheels.
+- [x] Replace the orange cube with a recognizable small RC car model, using game assets or a simple original model with visible wheels.
 - [ ] Make path driving faster than dirt driving, using verified surface information and a clear speed rule.
 - [ ] Support ramps and stairs while keeping the vehicle grounded and stable; define the maximum climbable slope/step.
 - [ ] Verify smooth acceleration, braking, reverse, and steering at low and high speed, including when input is interrupted or driving mode exits.

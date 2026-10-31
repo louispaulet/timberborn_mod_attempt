@@ -1,3 +1,4 @@
+using System;
 using Timberborn.CameraSystem;
 using Timberborn.BlockSystem;
 using Timberborn.InputSystem;
@@ -9,6 +10,7 @@ using Timberborn.WaterSystem;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
+using Object = UnityEngine.Object;
 
 namespace LouisPaulet.RcCar {
   public class RcCarController : IInputProcessor, ILoadableSingleton, IUnloadableSingleton {
@@ -19,7 +21,7 @@ namespace LouisPaulet.RcCar {
     private const float Coasting = 3f;
     private const float SteeringResponse = 5f;
     private const float TurnRate = 110f;
-    private const float CarSize = 0.8f;
+    private const float CarBlockHeight = 0.70f;
     private const int FlatGroundSearchStartRadius = 8;
     private const float GroundClearance = 0.03f;
     private const float CollisionSkinWidth = 0.03f;
@@ -29,14 +31,16 @@ namespace LouisPaulet.RcCar {
     private const float BridgeSupportRayDistance = 1.5f;
     private const float BridgeSupportHeightTolerance = 0.3f;
     private const int MaxCollisionSlideIterations = 3;
-    private static readonly Vector3 CarHalfExtents = Vector3.one * (CarSize * 0.5f);
+    private static readonly Vector3 CarHalfExtents = new Vector3(0.45f, 0.33f, 0.73f);
+    private static readonly Vector3 CarVisualOffset = new Vector3(0f, -0.0275f, 0f);
 
     private readonly InputService _inputService;
     private readonly CameraService _cameraService;
     private readonly MapSize _mapSize;
     private readonly RcCarWorldQuery _worldQuery;
     private GameObject? _car;
-    private Material? _carMaterial;
+    private Mesh? _carMesh;
+    private Material[]? _carMaterials;
     private float _speed;
     private float _steering;
     private bool _isDriving = true;
@@ -67,9 +71,17 @@ namespace LouisPaulet.RcCar {
     public void Unload() {
       _inputService.RemoveInputProcessor(this);
       InputSystem.onEvent -= OnInputSystemEvent;
-      if (_carMaterial != null) {
-        Object.Destroy(_carMaterial);
-        _carMaterial = null;
+      if (_carMaterials != null) {
+        foreach (Material material in _carMaterials) {
+          if (material != null) {
+            Object.Destroy(material);
+          }
+        }
+        _carMaterials = null;
+      }
+      if (_carMesh != null) {
+        Object.Destroy(_carMesh);
+        _carMesh = null;
       }
       if (_car != null) {
         Object.Destroy(_car);
@@ -146,30 +158,42 @@ namespace LouisPaulet.RcCar {
         return;
       }
 
-      _car = GameObject.CreatePrimitive(PrimitiveType.Cube);
-      _car.name = "RC Car";
-      _car.transform.localScale = Vector3.one * CarSize;
-      _car.transform.rotation = rotation;
+      _car = new GameObject("RC Car");
+      BoxCollider carCollider = _car.AddComponent<BoxCollider>();
+      carCollider.size = CarHalfExtents * 2f;
 
-      Renderer? renderer = _car.GetComponent<Renderer>();
-      if (renderer != null) {
-        Shader? shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null) {
-          shader = Shader.Find("Universal Render Pipeline/Unlit");
+      GameObject visual = new GameObject("Iron Teeth RC Car model");
+      visual.transform.SetParent(_car.transform, false);
+      visual.transform.localPosition = CarVisualOffset;
+      MeshFilter meshFilter = visual.AddComponent<MeshFilter>();
+      MeshRenderer meshRenderer = visual.AddComponent<MeshRenderer>();
+      try {
+        _carMesh = RcCarModel.CreateMesh(out Material[] carMaterials);
+        _carMaterials = carMaterials;
+        meshFilter.sharedMesh = _carMesh;
+        meshRenderer.sharedMaterials = _carMaterials;
+      } catch (Exception exception) {
+        Debug.LogError("[LouisPaulet.RcCar] Could not load the Iron Teeth RC car model: " + exception);
+        if (_carMaterials != null) {
+          foreach (Material material in _carMaterials) {
+            if (material != null) {
+              Object.Destroy(material);
+            }
+          }
+          _carMaterials = null;
         }
-        if (shader != null) {
-          _carMaterial = new Material(shader);
-          renderer.material = _carMaterial;
-        } else {
-          _carMaterial = renderer.material;
-          Debug.LogWarning("[LouisPaulet.RcCar] Could not find a Timberborn-compatible cube shader.");
+        if (_carMesh != null) {
+          Object.Destroy(_carMesh);
+          _carMesh = null;
         }
-        _carMaterial.color = new Color(1f, 0.28f, 0.04f);
+        Object.Destroy(_car);
+        _car = null;
+        return;
       }
 
-      _car.transform.position = spawnPosition;
+      _car.transform.SetPositionAndRotation(spawnPosition, rotation);
       _cameraService.MoveTargetTo(spawnPosition);
-      Debug.Log("[LouisPaulet.RcCar] Spawned grounded RC car at " + spawnPosition + ".");
+      Debug.Log("[LouisPaulet.RcCar] Spawned the Iron Teeth RC car at " + spawnPosition + ".");
     }
 
     private bool TryFindSpawnPosition(Quaternion rotation, out Vector3 spawnPosition) {
@@ -335,7 +359,7 @@ namespace LouisPaulet.RcCar {
         }
 
         if (Mathf.Abs(cellSupportHeight - referenceSupportHeight) > MaxGroundHeightChange
-          || _worldQuery.IsBlockedByNonPathObject(cell, Mathf.FloorToInt(cellSupportHeight), Mathf.CeilToInt(cellSupportHeight + CarSize))) {
+          || _worldQuery.IsBlockedByNonPathObject(cell, Mathf.FloorToInt(cellSupportHeight), Mathf.CeilToInt(cellSupportHeight + CarBlockHeight))) {
           groundedPosition = default;
           return false;
         }

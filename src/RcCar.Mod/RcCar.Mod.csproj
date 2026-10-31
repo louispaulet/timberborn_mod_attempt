@@ -12,6 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets/IronTeethRcCar.obj" LogicalName="LouisPaulet.RcCar.Assets.IronTeethRcCar.obj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Bindito.Core">
       <HintPath>$(TimberbornManagedDir)/Bindito.Core.dll</HintPath>
       <Private>false</Private>

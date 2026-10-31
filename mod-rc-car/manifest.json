@@ -3,6 +3,6 @@
   "Version": "0.1.0",
   "Id": "LouisPaulet.RcCar",
   "MinimumGameVersion": "1.1.0.0",
-  "Description": "A small keyboard-driven cube prototype for testing vehicle movement.",
+  "Description": "A keyboard-driven Iron Teeth RC car prototype for testing vehicle movement.",
   "RequiredMods": []
 }
