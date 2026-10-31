@@ -14,7 +14,6 @@ using Object = UnityEngine.Object;
 
 namespace LouisPaulet.RcCar {
   public class RcCarController : IInputProcessor, ILoadableSingleton, IUnloadableSingleton {
-    private const float ForwardSpeed = 7f;
     private const float ReverseSpeed = 3.5f;
     private const float Acceleration = 8f;
     private const float Braking = 12f;
@@ -25,11 +24,13 @@ namespace LouisPaulet.RcCar {
     private const int FlatGroundSearchStartRadius = 8;
     private const float GroundClearance = 0.03f;
     private const float CollisionSkinWidth = 0.03f;
-    private const float MaxGroundHeightChange = 0.25f;
+    // One block of rise per tile is the maximum supported grade for ramps and stairs.
+    private const float MaxClimbableStepHeight = 1f;
     private const float MovementSubstepLength = 0.1f;
     private const float BridgeSupportRayStartOffset = 1.25f;
     private const float BridgeSupportRayDistance = 1.5f;
     private const float BridgeSupportHeightTolerance = 0.3f;
+    private const float WalkableNormalDot = 0.65f;
     private const int MaxCollisionSlideIterations = 3;
     private static readonly Vector3 CarHalfExtents = new Vector3(0.45f, 0.33f, 0.73f);
     private static readonly Vector3 CarVisualOffset = new Vector3(0f, -0.0275f, 0f);
@@ -265,26 +266,36 @@ namespace LouisPaulet.RcCar {
       }
 
       float deltaTime = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+      Vector3 currentPosition = _car.transform.position;
+      float supportHeight = currentPosition.y - CarHalfExtents.y - GroundClearance;
+      Vector2Int supportCell = new Vector2Int(Mathf.FloorToInt(currentPosition.x), Mathf.FloorToInt(currentPosition.z));
+      float forwardSpeed = RcCarSurfaceSpeed.GetForwardSpeed(
+        _worldQuery.IsPathAt(supportCell, Mathf.RoundToInt(supportHeight)));
       float throttle = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
-      float targetSpeed = throttle > 0f ? ForwardSpeed : throttle < 0f ? -ReverseSpeed : 0f;
+      float targetSpeed = throttle > 0f ? forwardSpeed : throttle < 0f ? -ReverseSpeed : 0f;
       float acceleration = throttle == 0f
         ? Coasting
         : _speed != 0f && Mathf.Sign(_speed) != Mathf.Sign(targetSpeed)
           ? Braking
           : Acceleration;
+      if (_speed != 0f
+        && Mathf.Sign(_speed) == Mathf.Sign(targetSpeed)
+        && Mathf.Abs(_speed) > Mathf.Abs(targetSpeed)) {
+        acceleration = Braking;
+      }
       _speed = Mathf.MoveTowards(_speed, targetSpeed, acceleration * deltaTime);
 
       float steeringInput = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
       _steering = Mathf.MoveTowards(_steering, steeringInput, SteeringResponse * deltaTime);
-      float speedRatio = Mathf.Clamp01(Mathf.Abs(_speed) / ForwardSpeed);
+      float speedRatio = Mathf.Clamp01(Mathf.Abs(_speed) / forwardSpeed);
       float reverseDirection = _speed < 0f ? -1f : 1f;
       float turnAngle = _steering * TurnRate * speedRatio * reverseDirection * deltaTime;
       Quaternion rotation = _car.transform.rotation * Quaternion.AngleAxis(turnAngle, Vector3.up);
-      Vector3 currentPosition = _car.transform.position;
-      float supportHeight = currentPosition.y - CarHalfExtents.y - GroundClearance;
       Vector2Int mapSize = _mapSize.TerrainSize2D;
 
-      if (!TryGetSupportedPosition(currentPosition, rotation, supportHeight, mapSize, out Vector3 groundedStart)) {
+      if (!TryGetSupportedPosition(currentPosition, rotation, supportHeight, mapSize, out Vector3 groundedStart)
+        || groundedStart.y > currentPosition.y + GroundClearance
+          && !TryStepUp(currentPosition, currentPosition, rotation, supportHeight, mapSize, out groundedStart)) {
         rotation = _car.transform.rotation;
         groundedStart = currentPosition;
       } else {
@@ -297,6 +308,7 @@ namespace LouisPaulet.RcCar {
       Vector3 stepDisplacement = desiredDisplacement / moveSteps;
 
       for (int step = 0; step < moveSteps && stepDisplacement.sqrMagnitude > 0.000001f; step++) {
+        Vector3 desiredPosition = currentPosition + stepDisplacement;
         Vector3 collisionResolvedPosition = RcCarPhysics.MoveWithCollision(
           currentPosition,
           rotation,
@@ -308,11 +320,48 @@ namespace LouisPaulet.RcCar {
           MaxCollisionSlideIterations,
           out bool collided);
 
-        if ((collisionResolvedPosition - currentPosition).sqrMagnitude < 0.000001f) {
-          break;
+        if (!TryGetSupportedPosition(collisionResolvedPosition, rotation, supportHeight, mapSize, out Vector3 groundedPosition)) {
+          if (!TryStepUp(
+            currentPosition,
+            desiredPosition,
+            rotation,
+            supportHeight,
+            mapSize,
+            out groundedPosition)) {
+            break;
+          }
+          currentPosition = groundedPosition;
+          supportHeight = currentPosition.y - CarHalfExtents.y - GroundClearance;
+          continue;
         }
 
-        if (!TryGetSupportedPosition(collisionResolvedPosition, rotation, supportHeight, mapSize, out Vector3 groundedPosition)) {
+        if (groundedPosition.y > currentPosition.y + GroundClearance) {
+          if (!TryStepUp(
+            currentPosition,
+            desiredPosition,
+            rotation,
+            supportHeight,
+            mapSize,
+            out groundedPosition)) {
+            break;
+          }
+          currentPosition = groundedPosition;
+          supportHeight = currentPosition.y - CarHalfExtents.y - GroundClearance;
+          continue;
+        }
+
+        if ((groundedPosition - currentPosition).sqrMagnitude < 0.000001f) {
+          if (collided && TryStepUp(
+            currentPosition,
+            desiredPosition,
+            rotation,
+            supportHeight,
+            mapSize,
+            out groundedPosition)) {
+            currentPosition = groundedPosition;
+            supportHeight = currentPosition.y - CarHalfExtents.y - GroundClearance;
+            continue;
+          }
           break;
         }
 
@@ -326,13 +375,115 @@ namespace LouisPaulet.RcCar {
       _car.transform.SetPositionAndRotation(currentPosition, rotation);
     }
 
+    private bool TryStepUp(
+      Vector3 currentPosition,
+      Vector3 desiredPosition,
+      Quaternion rotation,
+      float referenceSupportHeight,
+      Vector2Int mapSize,
+      out Vector3 steppedPosition) {
+      steppedPosition = default;
+      if (!TryGetSupportedPosition(
+        desiredPosition,
+        rotation,
+        referenceSupportHeight,
+        mapSize,
+        out Vector3 targetGroundedPosition)) {
+        return false;
+      }
+
+      float stepHeight = targetGroundedPosition.y - currentPosition.y;
+      if (stepHeight <= GroundClearance || stepHeight > MaxClimbableStepHeight) {
+        return false;
+      }
+
+      if (!HasVerticalStepClearance(currentPosition, rotation, stepHeight)) {
+        return false;
+      }
+
+      Vector3 horizontalDisplacement = new Vector3(
+        desiredPosition.x - currentPosition.x,
+        0f,
+        desiredPosition.z - currentPosition.z);
+      Vector3 elevatedStart = currentPosition + Vector3.up * stepHeight;
+      Vector3 elevatedTarget = RcCarPhysics.MoveWithCollision(
+        elevatedStart,
+        rotation,
+        CarHalfExtents,
+        horizontalDisplacement,
+        _car!.transform,
+        Physics.DefaultRaycastLayers,
+        CollisionSkinWidth,
+        MaxCollisionSlideIterations,
+        out _);
+
+      if ((elevatedTarget - elevatedStart - horizontalDisplacement).sqrMagnitude > 0.0025f) {
+        return false;
+      }
+
+      Vector3 groundedTarget = new Vector3(elevatedTarget.x, targetGroundedPosition.y, elevatedTarget.z);
+      if (!TryGetSupportedPosition(
+        groundedTarget,
+        rotation,
+        referenceSupportHeight + stepHeight,
+        mapSize,
+        out Vector3 finalPosition)
+        || !HasClearanceAt(finalPosition, rotation)) {
+        return false;
+      }
+
+      steppedPosition = finalPosition;
+      return true;
+    }
+
+    private bool HasVerticalStepClearance(Vector3 position, Quaternion rotation, float stepHeight) {
+      RaycastHit[] hits = Physics.BoxCastAll(
+        position,
+        CarHalfExtents,
+        Vector3.up,
+        rotation,
+        stepHeight,
+        Physics.DefaultRaycastLayers,
+        QueryTriggerInteraction.Ignore);
+      foreach (RaycastHit hit in hits) {
+        if (hit.collider == null || IsPartOfCar(hit.collider.transform)) {
+          continue;
+        }
+
+        if (Vector3.Dot(hit.normal, Vector3.up) > WalkableNormalDot) {
+          continue;
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+
+    private bool HasClearanceAt(Vector3 position, Quaternion rotation) {
+      Collider[] overlaps = Physics.OverlapBox(
+        position + Vector3.up * CollisionSkinWidth,
+        CarHalfExtents,
+        rotation,
+        Physics.DefaultRaycastLayers,
+        QueryTriggerInteraction.Ignore);
+      foreach (Collider collider in overlaps) {
+        if (collider != null && !IsPartOfCar(collider.transform)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
     private bool TryGetSupportedPosition(
       Vector3 position,
       Quaternion rotation,
       float referenceSupportHeight,
       Vector2Int mapSize,
       out Vector3 groundedPosition) {
-      float supportHeight = 0f;
+      float lowestSupportHeight = float.PositiveInfinity;
+      float highestSupportHeight = float.NegativeInfinity;
       bool hasSupportHeight = false;
 
       for (int probeIndex = 0; probeIndex < 5; probeIndex++) {
@@ -359,22 +510,23 @@ namespace LouisPaulet.RcCar {
           cellSupportHeight = bridgeHeight;
         }
 
-        if (Mathf.Abs(cellSupportHeight - referenceSupportHeight) > MaxGroundHeightChange
+        if (Mathf.Abs(cellSupportHeight - referenceSupportHeight) > MaxClimbableStepHeight
           || _worldQuery.IsBlockedByNonPathObject(cell, Mathf.FloorToInt(cellSupportHeight), Mathf.CeilToInt(cellSupportHeight + CarBlockHeight))) {
           groundedPosition = default;
           return false;
         }
 
-        if (hasSupportHeight && Mathf.Abs(cellSupportHeight - supportHeight) > MaxGroundHeightChange) {
-          groundedPosition = default;
-          return false;
-        }
-
-        supportHeight = cellSupportHeight;
+        lowestSupportHeight = Mathf.Min(lowestSupportHeight, cellSupportHeight);
+        highestSupportHeight = Mathf.Max(highestSupportHeight, cellSupportHeight);
         hasSupportHeight = true;
       }
 
-      groundedPosition = new Vector3(position.x, supportHeight + CarHalfExtents.y + GroundClearance, position.z);
+      if (!hasSupportHeight || highestSupportHeight - lowestSupportHeight > MaxClimbableStepHeight) {
+        groundedPosition = default;
+        return false;
+      }
+
+      groundedPosition = new Vector3(position.x, highestSupportHeight + CarHalfExtents.y + GroundClearance, position.z);
       return hasSupportHeight;
     }
 
