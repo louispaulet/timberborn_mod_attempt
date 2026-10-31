@@ -33,10 +33,17 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 ### P1 — Match the requested vehicle behavior
 
 - [x] Replace the orange cube with a recognizable small RC car model, using game assets or a simple original model with visible wheels.
-- [ ] Make path driving faster than dirt driving, using verified surface information and a clear speed rule.
-- [ ] Support ramps and stairs while keeping the vehicle grounded and stable; define the maximum climbable slope/step.
-- [ ] Verify smooth acceleration, braking, reverse, and steering at low and high speed, including when input is interrupted or driving mode exits.
-- [ ] Verify camera follow through turns and obstacles, and define how the camera behaves after Escape and when V resumes driving.
+- [ ] Make path driving faster than dirt driving, using verified surface information and a clear speed rule. **Code is in place:** 7 m/s on dirt and 10.5 m/s on paths. Live path-speed comparison is pending; the flatmap road tiles placed so far still appear as construction sites.
+- [ ] Support ramps and stairs while keeping the vehicle grounded and stable; define the maximum climbable slope/step. **Code is in place:** supports up to one block of rise per tile. Live stair/ramp climb is pending.
+- [ ] Verify smooth acceleration, braking, reverse, and steering at low and high speed, including when input is interrupted or driving mode exits. **Partially checked live:** on the flatmap, forward, combined forward/left, and reverse inputs moved the car; full low/high-speed and interruption behavior remains to check.
+- [ ] Verify camera follow through turns and obstacles, and define how the camera behaves after Escape and when V resumes driving. **Partially checked live:** the camera tracked movement while turning, held position after Escape, and returned to the car after V; obstacle-follow behavior remains to check.
+
+#### P1 live-test status
+
+- Test world: the user-requested custom `flatmap`, in disposable settlement `RcCarP1Flat-20261031` (Folktails, Timberborn `1.1.2.8`). The source map was left untouched.
+- The installed P1 build spawned the car on the flatmap. Computer-controlled forward, turn, and reverse inputs moved it on dry dirt; no RC Car exception appeared in the log during this pass.
+- Escape exited driving and stopped the car. After moving the camera while exited, V resumed driving and the camera returned to the car.
+- A five-tile path run was placed near the car for the speed comparison, but its tiles were still shown as construction sites at the last inspection. Path speed and stairs therefore remain unverified in game.
 
 ### P2 — Regression checks and polish
 
@@ -48,7 +55,7 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 
 - [x] On flat terrain, the car stays on the ground during sustained driving.
 - [x] Open water and terrain edges block movement in live play; building and natural-cell blocking are implemented but were not directly exercised live.
-- [ ] Paths produce a measurable speed increase over dirt.
-- [ ] Ramps and supported stairs can be climbed without the car flying or getting stuck.
+- [ ] Paths produce a measurable speed increase over dirt. (Rule implemented; flatmap comparison pending construction of the test path.)
+- [ ] Ramps and supported stairs can be climbed without the car flying or getting stuck. (One-block-per-tile climb limit implemented; live test pending.)
 - [x] The visible vehicle reads as an RC car rather than a colored cube.
 - [x] Camera follow, Escape to exit, and V to resume work in a live Timberborn 1.1 settlement.
