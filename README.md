@@ -80,7 +80,7 @@ make install
 
 ## RC Car Prototype
 
-`make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Enable it in Timberborn's Mod Manager and start a settlement. It spawns one orange cube on a level terrain patch near the map center and starts driving automatically.
+`make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Enable it in Timberborn's Mod Manager and start a settlement. It embeds the Iron Teeth RC car v2 model, with its Motors grille badge, radio antenna, glass chemical battery cells, and timber-and-steel bodywork. The prototype drives on a horizontal plane; collision handling, terrain following, path speed limits, stairs, and garage integration remain future work.
 
 - **WASD** accelerates, reverses, and steers.
 - **Escape** exits driving mode; **V** resumes it.

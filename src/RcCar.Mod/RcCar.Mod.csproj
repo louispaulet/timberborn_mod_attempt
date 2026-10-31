@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Assets/IronTeethRcCar.obj" LogicalName="LouisPaulet.RcCar.Assets.IronTeethRcCar.obj" />
+    <EmbeddedResource Include="Assets/IronTeethRcCar_V2.obj" LogicalName="LouisPaulet.RcCar.Assets.IronTeethRcCar.obj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -214,15 +214,46 @@ namespace LouisPaulet.RcCar {
         } else if (material.HasProperty("_Glossiness")) {
           material.SetFloat("_Glossiness", 1f - style.Roughness);
         }
+        if (style.Transparent) {
+          ConfigureTransparentMaterial(material);
+        }
         if (style.Emissive) {
           material.EnableKeyword("_EMISSION");
           if (material.HasProperty("_EmissionColor")) {
-            material.SetColor("_EmissionColor", style.Color * 0.35f);
+            material.SetColor("_EmissionColor", style.Color * style.EmissionStrength);
           }
         }
         materials[index] = material;
       }
       return materials;
+    }
+
+    private static void ConfigureTransparentMaterial(Material material) {
+      material.SetOverrideTag("RenderType", "Transparent");
+      if (material.HasProperty("_Surface")) {
+        material.SetFloat("_Surface", 1f);
+        material.SetFloat("_Blend", 0f);
+        material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+      }
+      if (material.HasProperty("_Mode")) {
+        material.SetFloat("_Mode", 3f);
+      }
+      if (material.HasProperty("_SrcBlend")) {
+        material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+      }
+      if (material.HasProperty("_DstBlend")) {
+        material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+      }
+      if (material.HasProperty("_ZWrite")) {
+        material.SetFloat("_ZWrite", 0f);
+      }
+      if (material.HasProperty("_AlphaClip")) {
+        material.SetFloat("_AlphaClip", 0f);
+      }
+      material.DisableKeyword("_ALPHATEST_ON");
+      material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+      material.EnableKeyword("_ALPHABLEND_ON");
+      material.renderQueue = (int)RenderQueue.Transparent;
     }
 
     private static MaterialStyle GetStyle(string name) {
@@ -237,6 +268,11 @@ namespace LouisPaulet.RcCar {
         case "IronTeeth_TealGlass": return new MaterialStyle(85, 200, 194, 0.28f, 0.22f, true);
         case "IronTeeth_Rubber": return new MaterialStyle(32, 35, 34, 0.05f, 0.92f);
         case "IronTeeth_Exhaust": return new MaterialStyle(52, 56, 58, 0.82f, 0.32f);
+        case "V2_ChemicalGlass": return new MaterialStyle(56, 184, 184, 0.12f, 0.10f, false, 66, true);
+        case "V2_ChemicalFluidTeal": return new MaterialStyle(6, 122, 61, 0.08f, 0.18f, true, 255, false, 0.16f);
+        case "V2_ChemicalFluidAmber": return new MaterialStyle(158, 51, 9, 0.12f, 0.20f, true, 255, false, 0.10f);
+        case "V2_ChemicalGlowTeal": return new MaterialStyle(56, 224, 143, 0.05f, 0.12f, true, 255, false, 0.32f);
+        case "V2_ChemicalGlowAmber": return new MaterialStyle(245, 112, 26, 0.04f, 0.14f, true, 255, false, 0.24f);
         default: return new MaterialStyle(74, 79, 85, 0.50f, 0.55f);
       }
     }
@@ -246,12 +282,25 @@ namespace LouisPaulet.RcCar {
       public readonly float Metallic;
       public readonly float Roughness;
       public readonly bool Emissive;
+      public readonly bool Transparent;
+      public readonly float EmissionStrength;
 
-      public MaterialStyle(byte red, byte green, byte blue, float metallic, float roughness, bool emissive = false) {
-        Color = new Color32(red, green, blue, 255);
+      public MaterialStyle(
+        byte red,
+        byte green,
+        byte blue,
+        float metallic,
+        float roughness,
+        bool emissive = false,
+        byte alpha = 255,
+        bool transparent = false,
+        float emissionStrength = 0.35f) {
+        Color = new Color32(red, green, blue, alpha);
         Metallic = metallic;
         Roughness = roughness;
         Emissive = emissive;
+        Transparent = transparent;
+        EmissionStrength = emissionStrength;
       }
     }
   }
