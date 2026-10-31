@@ -20,12 +20,20 @@
       <HintPath>$(TimberbornManagedDir)/Timberborn.CameraSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.BlockSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BlockSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Timberborn.InputSystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.InputSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Timberborn.MapStateSystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.MapStateSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.PathSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.PathSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Timberborn.SingletonSystem">
@@ -46,6 +54,10 @@
     </Reference>
     <Reference Include="Timberborn.TerrainSystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.TerrainSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.WaterSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.WaterSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
