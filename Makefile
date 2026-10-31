@@ -16,12 +16,15 @@ TEST_PROJECT := tests/AiHarness.Core.Tests/AiHarness.Core.Tests.csproj
 DLL := src/AiHarness.Mod/bin/Release/netstandard2.1/AiHarness.Mod.dll
 CORE_DLL := src/AiHarness.Mod/bin/Release/netstandard2.1/AiHarness.Core.dll
 PACKAGE_DIR := dist/AiHarness
+RC_CAR_PROJECT := src/RcCar.Mod/RcCar.Mod.csproj
+RC_CAR_DLL := src/RcCar.Mod/bin/Release/netstandard2.1/RcCar.Mod.dll
+RC_CAR_PACKAGE_DIR := dist/RcCar
 
 LOCAL_DOTNET := $(CURDIR)/.tools/dotnet/dotnet
 DOTNET := $(shell command -v dotnet 2>/dev/null || printf '%s' '$(LOCAL_DOTNET)')
 PYTHON ?= python3
 
-.PHONY: verify-env bootstrap test-fast watch-fast smoke-fake verify-fast smoke-live build package install launch up down logs clean
+.PHONY: verify-env bootstrap test-fast watch-fast smoke-fake verify-fast smoke-live build package install build-rc-car package-rc-car install-rc-car launch up down logs clean
 
 verify-env:
 	@test -d "$(GAME_APP)" || (echo "Timberborn app not found: $(GAME_APP)" && exit 1)
@@ -144,6 +147,22 @@ install: package
 	mkdir -p "$(MODS_DIR)"
 	cp -R "$(PACKAGE_DIR)" "$(MODS_DIR)/AiHarness"
 	@find "$(MODS_DIR)/AiHarness" -maxdepth 2 -type f -print
+
+build-rc-car: bootstrap verify-env
+	"$(DOTNET)" build "$(RC_CAR_PROJECT)" -c Release
+
+package-rc-car: build-rc-car
+	rm -rf "$(RC_CAR_PACKAGE_DIR)"
+	mkdir -p "$(RC_CAR_PACKAGE_DIR)"
+	cp mod-rc-car/manifest.json "$(RC_CAR_PACKAGE_DIR)/manifest.json"
+	cp "$(RC_CAR_DLL)" "$(RC_CAR_PACKAGE_DIR)/Code.dll"
+	@find "$(RC_CAR_PACKAGE_DIR)" -maxdepth 2 -type f -print
+
+install-rc-car: package-rc-car
+	rm -rf "$(MODS_DIR)/RcCar"
+	mkdir -p "$(MODS_DIR)"
+	cp -R "$(RC_CAR_PACKAGE_DIR)" "$(MODS_DIR)/RcCar"
+	@find "$(MODS_DIR)/RcCar" -maxdepth 2 -type f -print
 
 launch:
 	open -a Steam

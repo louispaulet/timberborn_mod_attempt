@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>RcCar.Mod</AssemblyName>
+    <RootNamespace>LouisPaulet.RcCar</RootNamespace>
+    <ImplicitUsings>false</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <TimberbornManagedDir>/Users/louispaulet/Library/Application Support/Steam/steamapps/common/Timberborn/Timberborn.app/Contents/Resources/Data/Managed</TimberbornManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Bindito.Core">
+      <HintPath>$(TimberbornManagedDir)/Bindito.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.CameraSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.CameraSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.InputSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.MapStateSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.MapStateSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.SingletonSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.SingletonSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>$(TimberbornManagedDir)/Unity.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(TimberbornManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(TimberbornManagedDir)/UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.TerrainSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.TerrainSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -25,6 +25,9 @@ make smoke-live
 make build
 make package
 make install
+make build-rc-car
+make package-rc-car
+make install-rc-car
 make launch
 make up
 make down
@@ -74,6 +77,16 @@ make install
 ```
 
 `make package` creates `dist/AiHarness` with the mod manifest, `Code.dll`, and `AiHarness.Core.dll`. `make install` copies that folder to `/Users/louispaulet/Documents/Timberborn/Mods/AiHarness`.
+
+## RC Car Prototype
+
+`make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Enable it in Timberborn's Mod Manager and start a settlement. It spawns one orange cube on a level terrain patch near the map center and starts driving automatically.
+
+- **WASD** accelerates, reverses, and steers.
+- **Escape** exits driving mode; **V** resumes it.
+- The camera follows the cube while driving.
+
+This first prototype moves the cube on a horizontal plane from a level terrain spawn. Driving collisions, terrain-following, path speed, stairs, vehicle assets, and a garage remain for later iterations.
 
 ## Harness Commands
 
