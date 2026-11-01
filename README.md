@@ -83,7 +83,7 @@ make install
 `make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Its package includes `Code.dll` and the game-independent `RcCar.Core.dll`. The vehicle uses the Iron Teeth RC car v2 model and supports terrain movement, collision checks, and path speed boosts.
 
 - **WASD** accelerates, reverses, and steers.
-- **Escape** exits driving mode; **V** resumes it.
+- **Escape** exits driving mode; **V** resumes it. A status indicator above the bottom bar shows green **RC driving: ON** while driving and amber **RC driving: OFF** when stopped, along with the key to switch modes. If the car cannot spawn, it reports **RC car unavailable**.
 - The camera follows the car while driving.
 - Flat terrain and platforms at the car's current height are drivable. Any height change blocks movement unless a completed, aligned stair connects the two levels; this applies uphill and downhill.
 - Paths keep their 1.5× forward speed multiplier over raw ground. Path speed does not allow a height change.
