@@ -3,6 +3,14 @@ using Timberborn.BlockSystem;
 using UnityEngine;
 namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarWorldQuery {
+    public bool IsAlignedStairTraversal(Vector3 from, Vector3 to, float supportHeight) {
+      int supportLevel = Mathf.RoundToInt(supportHeight);
+      for (int lowHeight = supportLevel - 1; lowHeight <= supportLevel; lowHeight++) {
+        if (TryFindAlignedStair(from, to, lowHeight, out _)) return true;
+      }
+      return false;
+    }
+
     public bool CanTraverseByStairs(Vector3 from, Vector3 to, float fromHeight, float toHeight) {
       int fromLevel = Mathf.RoundToInt(fromHeight);
       int toLevel = Mathf.RoundToInt(toHeight);

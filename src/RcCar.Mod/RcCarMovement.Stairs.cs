@@ -23,18 +23,18 @@ namespace LouisPaulet.RcCar {
       float stepHeight = targetGroundedPosition.y - currentPosition.y;
       float targetSupportHeight = targetGroundedPosition.y
         - RcCarMovementSettings.CarHalfExtents.y - RcCarMovementSettings.GroundClearance;
-      RcCarCell fromCell = ToSurfaceCell(currentPosition);
-      RcCarCell toCell = ToSurfaceCell(desiredPosition);
-      float dx = desiredPosition.x - currentPosition.x;
-      float dz = desiredPosition.z - currentPosition.z;
-      bool sameHeightProgression = RcCarSurfaceTraversal.CanTraverse(
+      bool targetHasUniformSupport = TryGetSupportedPosition(
+        desiredPosition,
+        rotation,
+        referenceSupportHeight,
+        mapSize,
+        false,
+        out _);
+      bool sameHeightProgression = RcCarSurfaceTraversal.CanContinueAtSameHeight(
         new RcCarTerrainSurface(Mathf.RoundToInt(referenceSupportHeight)),
         new RcCarTerrainSurface(Mathf.RoundToInt(targetSupportHeight)),
-        fromCell,
-        toCell,
-        null,
-        dx,
-        dz);
+        targetHasUniformSupport,
+        _worldQuery.IsAlignedStairTraversal(currentPosition, desiredPosition, referenceSupportHeight));
       bool stairHeightChange = Mathf.Abs(Mathf.Abs(stepHeight) - RcCarMovementSettings.MaxStairHeightChange)
           <= RcCarMovementSettings.SupportHeightTolerance
         && _worldQuery.CanTraverseByStairs(
@@ -83,8 +83,5 @@ namespace LouisPaulet.RcCar {
       steppedPosition = finalPosition;
       return true;
     }
-
-    private static RcCarCell ToSurfaceCell(Vector3 position) =>
-      new RcCarCell(Mathf.FloorToInt(position.x), Mathf.FloorToInt(position.z));
   }
 }

@@ -1,6 +1,15 @@
 namespace LouisPaulet.RcCar.Core;
 
 public static class RcCarSurfaceTraversal {
+  public static bool CanContinueAtSameHeight(
+    RcCarSurface fromSurface,
+    RcCarSurface toSurface,
+    bool targetHasUniformSupport,
+    bool alignedStairTraversal) {
+    return fromSurface.Height == toSurface.Height
+      && (targetHasUniformSupport || alignedStairTraversal);
+  }
+
   public static bool CanTraverse(
     RcCarSurface fromSurface,
     RcCarSurface toSurface,

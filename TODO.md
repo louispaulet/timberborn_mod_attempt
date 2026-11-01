@@ -36,7 +36,7 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - [x] Replace the orange cube with a recognizable small RC car model, using game assets or a simple original model with visible wheels.
 - [x] Let the car drive over completed path tiles. Path colliders are excluded from car collision and clearance checks while other building colliders remain blocking. **Live check:** on the flatmap copy, the car crossed the completed path at z=52 without stopping.
 - [ ] Verify the path speed increase against dirt in a live run. **Code is in place:** 7 m/s on dirt and 10.5 m/s on paths (1.5×). The car crossed a completed path, but the numerical speed comparison has not yet been measured.
-- [ ] Allow height changes only through a completed, aligned stair, then continue across the upper platform. **User live report:** direct platform climbs without stairs are blocked and stair ascent reaches the top, but the car stops there. Equal-height platform progress is now allowed by the runtime policy; live retest is pending. Stair descent through the stair is not yet confirmed.
+- [ ] Allow height changes only through a completed, aligned stair, then continue across the upper platform and stop at its edge. **User live report:** direct platform climbs without stairs are blocked and stair ascent reaches the top, but the car stops there. The first continuation fix let the car overhang the platform edge; equal-height progress now requires uniform footprint support except while aligned with a stair. Live retest is pending. Stair descent through the stair is not yet confirmed.
 - [x] Verify smooth acceleration, braking, reverse, and steering at low and high speed, including when input is interrupted or driving mode exits. **Live check:** forward and reverse moved the car on flat dirt and Diorama terrain; a 2-second flat-dirt run moved about 13.4 m, reverse moved the car about 5.0 m, and a forward-to-coast steering sequence moved it about 2.5 m. Escape stopped driving and V resumed it.
 - [x] Verify camera follow through turns and obstacles, and define how the camera behaves after Escape and when V resumes driving. **Live check:** the camera followed movement and steering, stayed centered when the car stopped at a river-bank edge, remained where left after Escape, and returned to the car after V.
 
@@ -49,7 +49,7 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - On Diorama, a 1.2-second forward input moved the car about 1.5 m from its spawn point. Reverse from the river-bank edge moved it about 5.0 m back onto the land strip. A forward-then-coasting steering input moved it about 2.5 m while the camera continued to track it.
 - Escape exited driving and stopped the car. After moving the camera with the harness, V resumed driving and returned the camera target to the car's position. The Diorama run also showed the car remain on dry land at the river edge.
 - Path traversal is now verified in Timberborn on the reusable flatmap: the car crossed the completed row at z=52 (from approximately `(67.63, 4.36, 53.85)` to `(68.26, 4.36, 49.21)`) without sticking on the path. The 7 m/s dirt and 10.5 m/s path speed limits are implemented; an isolated live speed comparison remains open.
-- The user's latest live run on the reusable flatmap confirmed that direct platform edges block without stairs and that the car can climb the stair to the upper platform. The car then stopped at the top. The current same-height continuation fix was built and installed; the game has not been launched with this change.
+- The user's live runs on the reusable flatmap confirmed that direct platform edges block without stairs and that stair ascent reaches the upper platform. The first continuation fix then let the car overhang the far platform edge. The new movement rule requires uniform support across the footprint except while aligned with a stair; the updated build is installed and awaiting user retest. Codex did not launch the game.
 - No RC Car exception appeared in the Player.log during these checks.
 
 ### P2 — Regression checks and polish
@@ -65,6 +65,6 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - [x] Paths are traversable. (Completed path crossing verified live on the flatmap.)
 - [ ] Paths produce a measurable speed increase over dirt. (Rule implemented at 1.5×; live comparison remains pending.)
 - [x] Direct platform edges block without a completed aligned stair. (User confirmed live in both directions.)
-- [ ] After climbing, the car can continue over the upper platform and descend through the stair. (Same-height continuation fix installed; user retest pending.)
+- [ ] After climbing, the car can continue over uniformly supported platform tiles, stop at the edge, and descend through the stair. (Edge-support regression fix built and installed; user retest pending.)
 - [x] The visible vehicle reads as an RC car rather than a colored cube.
 - [x] Camera follow, Escape to exit, and V to resume work in a live Timberborn 1.1 settlement.

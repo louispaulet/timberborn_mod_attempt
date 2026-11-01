@@ -18,7 +18,26 @@ public sealed class SurfaceTraversalTests {
 
   [Fact]
   public void ProgressAcrossUpperPlatformDoesNotRequireAnotherStair() {
-    Assert.True(Can(new RcCarPlatformSurface(1), new RcCarPlatformSurface(1), null, 0, 1));
+    Assert.True(RcCarSurfaceTraversal.CanContinueAtSameHeight(
+      new RcCarPlatformSurface(1), new RcCarPlatformSurface(1), true, false));
+  }
+
+  [Fact]
+  public void MixedSupportAtPlatformEdgeBlocksWithoutAlignedStair() {
+    Assert.False(RcCarSurfaceTraversal.CanContinueAtSameHeight(
+      new RcCarPlatformSurface(1), new RcCarPlatformSurface(1), false, false));
+  }
+
+  [Fact]
+  public void MixedSupportCanContinueWhileAlignedWithStair() {
+    Assert.True(RcCarSurfaceTraversal.CanContinueAtSameHeight(
+      new RcCarPlatformSurface(1), new RcCarPlatformSurface(1), false, true));
+  }
+
+  [Fact]
+  public void SameHeightContinuationDoesNotAuthorizeHeightChange() {
+    Assert.False(RcCarSurfaceTraversal.CanContinueAtSameHeight(
+      new RcCarPlatformSurface(1), new RcCarTerrainSurface(0), true, true));
   }
 
   [Theory]
