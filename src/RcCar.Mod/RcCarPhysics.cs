@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
 
 namespace LouisPaulet.RcCar {
   /// <summary>
-  /// Sweeps a box-shaped car body against Unity colliders and slides along blocking surfaces.
+  /// Sweeps a box-shaped car body against Unity colliders and slides along blocking surfaces,
+  /// skipping the path colliders identified by the game-world query.
   /// Terrain support and water rejection are handled by the game-world query before/after this
   /// horizontal movement; this class only resolves colliders such as buildings and obstacles.
   /// </summary>
@@ -23,6 +25,7 @@ namespace LouisPaulet.RcCar {
       Vector3 halfExtents,
       Vector3 desiredDisplacement,
       Transform selfRoot,
+      Func<Collider, bool> isPathCollider,
       int collisionMask,
       float skinWidth,
       int maxSlideIterations,
@@ -53,6 +56,7 @@ namespace LouisPaulet.RcCar {
           orientation,
           distance + safeSkinWidth,
           selfRoot,
+          isPathCollider,
           collisionMask,
           out closestHit)) {
           position += remaining;
@@ -83,6 +87,7 @@ namespace LouisPaulet.RcCar {
       Quaternion orientation,
       float distance,
       Transform selfRoot,
+      Func<Collider, bool> isPathCollider,
       int collisionMask,
       out RaycastHit closestHit) {
       int hitCount = Physics.BoxCastNonAlloc(
@@ -117,7 +122,9 @@ namespace LouisPaulet.RcCar {
       for (int index = 0; index < resultCount; index++) {
         RaycastHit hit = overflowResults != null ? overflowResults[index] : CastResults[index];
         Collider? collider = hit.collider;
-        if (collider == null || IsPartOfSelf(collider.transform, selfRoot)) {
+        if (collider == null
+          || IsPartOfSelf(collider.transform, selfRoot)
+          || isPathCollider(collider)) {
           continue;
         }
 

@@ -59,6 +59,40 @@ namespace LouisPaulet.RcCar {
     }
 
     /// <summary>
+    /// Identifies a single-cell Unity collider belonging to a path tile. This lets the car's
+    /// collider sweeps pass over the path's own block collider without ignoring nearby buildings.
+    /// </summary>
+    public bool IsPathCollider(Collider collider) {
+      Bounds bounds = collider.bounds;
+      if (bounds.size.x > 1.5f || bounds.size.y > 1.5f || bounds.size.z > 1.5f) {
+        return false;
+      }
+
+      int minX = Mathf.FloorToInt(bounds.min.x + 0.001f);
+      int maxX = Mathf.FloorToInt(bounds.max.x - 0.001f);
+      int minY = Mathf.FloorToInt(bounds.min.z + 0.001f);
+      int maxY = Mathf.FloorToInt(bounds.max.z - 0.001f);
+      int pathHeight = Mathf.FloorToInt(bounds.center.y);
+
+      if (maxX < minX) {
+        minX = maxX = Mathf.FloorToInt(bounds.center.x);
+      }
+      if (maxY < minY) {
+        minY = maxY = Mathf.FloorToInt(bounds.center.z);
+      }
+
+      for (int x = minX; x <= maxX; x++) {
+        for (int y = minY; y <= maxY; y++) {
+          if (IsPathAt(new Vector2Int(x, y), pathHeight)) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    }
+
+    /// <summary>
     /// Blocks buildings and natural resources while allowing paths, including bridge paths.
     /// Check the vertical cells occupied by the car body, starting at its support surface.
     /// </summary>

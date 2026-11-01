@@ -33,7 +33,8 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 ### P1 — Match the requested vehicle behavior
 
 - [x] Replace the orange cube with a recognizable small RC car model, using game assets or a simple original model with visible wheels.
-- [ ] Make path driving faster than dirt driving, using verified surface information and a clear speed rule. **Code is in place:** 7 m/s on dirt and 10.5 m/s on paths. Live path-speed comparison is pending because the path runs in all test worlds are still construction sites.
+- [x] Let the car drive over completed path tiles. Path colliders are excluded from car collision and clearance checks while other building colliders remain blocking. **Live check:** on the flatmap copy, the car crossed the completed path at z=52 without stopping.
+- [ ] Verify the path speed increase against dirt in a live run. **Code is in place:** 7 m/s on dirt and 10.5 m/s on paths (1.5×). The car crossed a completed path, but the numerical speed comparison has not yet been measured.
 - [ ] Support ramps and stairs while keeping the vehicle grounded and stable; define the maximum climbable slope/step. **Code is in place:** supports up to one block of rise per tile. Live climb remains unverified because the stair sites are still construction sites.
 - [x] Verify smooth acceleration, braking, reverse, and steering at low and high speed, including when input is interrupted or driving mode exits. **Live check:** forward and reverse moved the car on flat dirt and Diorama terrain; a 2-second flat-dirt run moved about 13.4 m, reverse moved the car about 5.0 m, and a forward-to-coast steering sequence moved it about 2.5 m. Escape stopped driving and V resumed it.
 - [x] Verify camera follow through turns and obstacles, and define how the camera behaves after Escape and when V resumes driving. **Live check:** the camera followed movement and steering, stayed centered when the car stopped at a river-bank edge, remained where left after Escape, and returned to the car after V.
@@ -41,14 +42,13 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 #### P1 live-test status
 
 - Test worlds: disposable `RcCarP1Verify-20261101` on the user's custom `flatmap`, disposable `RcCarP1Diorama-20261101`, and the reusable flatmap settlement `RcCarP1FlatTools-20261101` (Folktails, Timberborn `1.1.2.8`). The custom map source was left untouched. Use `flatmap` for the remaining live checks.
-- The reusable flatmap save is at `/Users/louispaulet/Documents/Timberborn/ExperimentalSaves/RcCarP1FlatTools-20261101/RcCarP1FlatTools-20261101.timber`. It contains a nine-tile path run at `(64..72, 52, 4)` and a `Stairs.Folktails` construction site at `(63, 51, 4)` beside the run.
-- The stair context panel showed `0% (waiting for materials)`, `0/1` logs, `0/4` planks, and that the site is too far from a district. This prevents the live path-speed and stair-climb checks from using the placed surfaces until they are completed.
-- Developer mode did not open with the requested `Cmd+Shift+W`. The in-game keybindings list that chord as Map Editor “Redo changes”; the documented developer-mode chord `Shift+Alt+Z` also produced no visible developer controls in this session. No XP or instant-build action was available, so the test save retains the unfinished sites.
+- The user-built reusable flatmap save is `/Users/louispaulet/Documents/Timberborn/ExperimentalSaves/RcCarP1FlatTools-20261101/RcCarP1FlatTools-20261101 (2).timber`. It contains 28 completed path tiles: a 19-tile row at `(54..72, 52, 4)` and a 9-tile run at `(63, 53..61, 4)`, plus a completed `Stairs.Folktails` at `(63, 51, 4)` and platforms above it. The original `(3)` save was left unchanged during the code test.
+- The user opened developer mode with `Option+Shift+W` and saved the completed surfaces. The previous notes about unfinished construction sites and inaccessible instant-build controls no longer apply.
 - On flat dirt, a 2-second forward input moved the camera target from `(56.50, 4.36, 56.50)` to `(64.21, 4.36, 67.51)`, about 13.4 m. Forward, turning, and reverse inputs all moved the car in the live runs.
 - On Diorama, a 1.2-second forward input moved the car about 1.5 m from its spawn point. Reverse from the river-bank edge moved it about 5.0 m back onto the land strip. A forward-then-coasting steering input moved it about 2.5 m while the camera continued to track it.
 - Escape exited driving and stopped the car. After moving the camera with the harness, V resumed driving and returned the camera target to the car's position. The Diorama run also showed the car remain on dry land at the river edge.
-- Path speed remains unverified: the harness placed path construction sites at `(17, 31, 3)` and `(16, 30, 3)` in Diorama; they remained visibly unfinished after the settlement advanced to day 2. The flatmap comparison also only produced construction sites, so there was no traversable path surface to compare against dirt.
-- Stairs remain unverified: a `Stairs.Folktails` construction site was placed at `(15, 29, 3)` in Diorama, but it remained unfinished. The live resource summary showed zero stock of both planks and logs, so a climb test was not possible.
+- Path traversal is now verified in Timberborn on the reusable flatmap: the car crossed the completed row at z=52 (from approximately `(67.63, 4.36, 53.85)` to `(68.26, 4.36, 49.21)`) without sticking on the path. The 7 m/s dirt and 10.5 m/s path speed limits are implemented; an isolated live speed comparison remains open.
+- Stairs remain unverified live. The reusable flatmap now has a completed stair at `(63, 51, 4)` with a completed path and platforms beside it, so the climb check can proceed there.
 - No RC Car exception appeared in the Player.log during these checks.
 
 ### P2 — Regression checks and polish
@@ -61,7 +61,8 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 
 - [x] On flat terrain, the car stays on the ground during sustained driving.
 - [x] Open water and terrain edges block movement in live play; building and natural-cell blocking are implemented but were not directly exercised live.
-- [ ] Paths produce a measurable speed increase over dirt. (Rule implemented; no completed test path was available in either disposable world.)
-- [ ] Ramps and supported stairs can be climbed without the car flying or getting stuck. (One-block-per-tile climb limit implemented; the live stair site could not be completed with zero stock of construction materials.)
+- [x] Paths are traversable. (Completed path crossing verified live on the flatmap.)
+- [ ] Paths produce a measurable speed increase over dirt. (Rule implemented at 1.5×; live comparison remains pending.)
+- [ ] Ramps and supported stairs can be climbed without the car flying or getting stuck. (One-block-per-tile climb limit implemented; completed flatmap stair is ready for a live check.)
 - [x] The visible vehicle reads as an RC car rather than a colored cube.
 - [x] Camera follow, Escape to exit, and V to resume work in a live Timberborn 1.1 settlement.

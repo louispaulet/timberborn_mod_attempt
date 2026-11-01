@@ -253,7 +253,13 @@ namespace LouisPaulet.RcCar {
         rotation,
         Physics.DefaultRaycastLayers,
         QueryTriggerInteraction.Ignore);
-      return overlaps.Length == 0;
+      foreach (Collider collider in overlaps) {
+        if (collider != null && !_worldQuery.IsPathCollider(collider)) {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     private static bool IsCellInsideMap(Vector2Int cell, Vector2Int mapSize) {
@@ -315,6 +321,7 @@ namespace LouisPaulet.RcCar {
           CarHalfExtents,
           stepDisplacement,
           _car.transform,
+          _worldQuery.IsPathCollider,
           Physics.DefaultRaycastLayers,
           CollisionSkinWidth,
           MaxCollisionSlideIterations,
@@ -412,6 +419,7 @@ namespace LouisPaulet.RcCar {
         CarHalfExtents,
         horizontalDisplacement,
         _car!.transform,
+        _worldQuery.IsPathCollider,
         Physics.DefaultRaycastLayers,
         CollisionSkinWidth,
         MaxCollisionSlideIterations,
@@ -446,7 +454,9 @@ namespace LouisPaulet.RcCar {
         Physics.DefaultRaycastLayers,
         QueryTriggerInteraction.Ignore);
       foreach (RaycastHit hit in hits) {
-        if (hit.collider == null || IsPartOfCar(hit.collider.transform)) {
+        if (hit.collider == null
+          || IsPartOfCar(hit.collider.transform)
+          || _worldQuery.IsPathCollider(hit.collider)) {
           continue;
         }
 
@@ -468,7 +478,9 @@ namespace LouisPaulet.RcCar {
         Physics.DefaultRaycastLayers,
         QueryTriggerInteraction.Ignore);
       foreach (Collider collider in overlaps) {
-        if (collider != null && !IsPartOfCar(collider.transform)) {
+        if (collider != null
+          && !IsPartOfCar(collider.transform)
+          && !_worldQuery.IsPathCollider(collider)) {
           return false;
         }
       }
