@@ -8,8 +8,10 @@ using UnityEngine;
 namespace LouisPaulet.RcCar {
   public partial class RcCarController {
     private void ProcessGameTestCommand() {
-      string? directory = Environment.GetEnvironmentVariable("RC_CAR_GAME_TEST_DIR");
-      if (_car == null || string.IsNullOrEmpty(directory)) return;
+      string directory = Environment.GetEnvironmentVariable("RC_CAR_GAME_TEST_DIR")
+        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+          "Documents", "Timberborn", "Mods", "RcCar", "generated", "game-tests");
+      if (_car == null) return;
       string request = Path.Combine(directory, "request.txt");
       if (!File.Exists(request)) return;
       string[] args = File.ReadAllText(request).Trim().Split(' ');
@@ -29,6 +31,11 @@ namespace LouisPaulet.RcCar {
             Physics.SyncTransforms();
             break;
           case "status": break;
+          case "probe":
+            File.WriteAllText(Path.Combine(directory, "response.txt"),
+              _movement.GameTestProbe(_car.transform.position, _car.transform.rotation,
+                new Vector3(Number(1), 0f, Number(2))));
+            return;
           default: throw new ArgumentException("Unknown game test command.");
         }
         _cameraService.MoveTargetTo(_car.transform.position);
@@ -44,5 +51,20 @@ namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarMovement {
     internal Vector3 GameTestMove(Vector3 position, Quaternion rotation, Vector3 displacement) =>
       Move(position, rotation, displacement, FloorHeight(position), _mapSize.TerrainSize2D);
+
+    internal string GameTestProbe(Vector3 p, Quaternion r, Vector3 d) {
+      float h = FloorHeight(p);
+      bool supported = TryGetSupportedPosition(p + d, r, h, _mapSize.TerrainSize2D, true, out Vector3 target);
+      float step = target.y - p.y;
+      var overlaps = Physics.OverlapBox(target + Vector3.up * RcCarMovementSettings.CollisionSkinWidth,
+        RcCarMovementSettings.CarHalfExtents, r, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+      string blockers = "";
+      foreach (Collider c in overlaps) {
+        if (!IsPartOfCar(c.transform) && !_worldQuery.IsDrivableSurfaceCollider(c)) blockers += c.name + c.bounds + ";";
+      }
+      return $"supported={supported} target={target} step={step} aligned={_worldQuery.IsAlignedStairTraversal(p, p+d,h,r)} "
+        + $"stairs={_worldQuery.CanTraverseByStairs(p,p+d,h,h+step)} vertical={HasVerticalStepClearance(p,r,step)} "
+        + $"clear={HasClearanceAt(target,r)} blockers={blockers}";
+    }
   }
 }

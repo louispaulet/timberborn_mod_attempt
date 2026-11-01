@@ -88,7 +88,11 @@ make install
 - Flat terrain and platforms at the car's current height are drivable. Any height change blocks movement unless a completed, aligned stair connects the two levels; this applies uphill and downhill.
 - Paths keep their 1.5× forward speed multiplier over raw ground. Path speed does not allow a height change.
 
-Run `make test-fast` and `make build-rc-car` for non-game checks. The latest stairs-only movement change still needs an in-game regression check.
+Run `make test-fast` and `make build-rc-car` for non-game checks. Stair continuation checks the car's longitudinal footprint, so the rear can clear the stair after the center reaches the landing. Height changes still require a completed, aligned stair under the center; nearby stairs cannot authorize climbing another block.
+
+In-game verification on 2026-11-01 passed ascent onto the landing, continuation from the previously stuck position, descent, blocked ascent/descent at neighboring edges without stairs, and rejection of unfinished platforms. WASD ascent was also checked visually in the disposable `RcCarStairFix-20261101` settlement.
+
+The repeatable Unity regression script is `tests/RcCar.GameTests/check_stair_scene.py`; its docstring describes the required disposable scene. Build the optional test bridge with `.tools/dotnet/dotnet build src/RcCar.Mod/RcCar.Mod.csproj -c Release -p:RcCarGameTests=true`, copy its DLL into the local RC Car mod as `Code.dll`, and restart in that test scene. Run `python3 tests/RcCar.GameTests/check_stair_scene.py` while the game is running. The bridge processes file commands on Unity's main thread through the actual movement and physics code. Set `RC_CAR_GAME_TEST_DIR` at launch and pass the same directory with `--directory` to override its default generated-files directory. `make install-rc-car` restores the normal build, which excludes the bridge.
 
 ## Harness Commands
 
