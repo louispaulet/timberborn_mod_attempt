@@ -28,6 +28,14 @@
       <HintPath>$(TimberbornManagedDir)/Timberborn.BlockSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Timberborn.BaseComponentSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BaseComponentSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Timberborn.Common">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Timberborn.InputSystem">
       <HintPath>$(TimberbornManagedDir)/Timberborn.InputSystem.dll</HintPath>
       <Private>false</Private>

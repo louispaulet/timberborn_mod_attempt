@@ -254,7 +254,7 @@ namespace LouisPaulet.RcCar {
         Physics.DefaultRaycastLayers,
         QueryTriggerInteraction.Ignore);
       foreach (Collider collider in overlaps) {
-        if (collider != null && !_worldQuery.IsPathCollider(collider)) {
+        if (collider != null && !_worldQuery.IsDrivableSurfaceCollider(collider)) {
           return false;
         }
       }
@@ -321,7 +321,7 @@ namespace LouisPaulet.RcCar {
           CarHalfExtents,
           stepDisplacement,
           _car.transform,
-          _worldQuery.IsPathCollider,
+          _worldQuery.IsDrivableSurfaceCollider,
           Physics.DefaultRaycastLayers,
           CollisionSkinWidth,
           MaxCollisionSlideIterations,
@@ -419,7 +419,7 @@ namespace LouisPaulet.RcCar {
         CarHalfExtents,
         horizontalDisplacement,
         _car!.transform,
-        _worldQuery.IsPathCollider,
+        _worldQuery.IsDrivableSurfaceCollider,
         Physics.DefaultRaycastLayers,
         CollisionSkinWidth,
         MaxCollisionSlideIterations,
@@ -456,7 +456,7 @@ namespace LouisPaulet.RcCar {
       foreach (RaycastHit hit in hits) {
         if (hit.collider == null
           || IsPartOfCar(hit.collider.transform)
-          || _worldQuery.IsPathCollider(hit.collider)) {
+          || _worldQuery.IsDrivableSurfaceCollider(hit.collider)) {
           continue;
         }
 
@@ -480,7 +480,7 @@ namespace LouisPaulet.RcCar {
       foreach (Collider collider in overlaps) {
         if (collider != null
           && !IsPartOfCar(collider.transform)
-          && !_worldQuery.IsPathCollider(collider)) {
+          && !_worldQuery.IsDrivableSurfaceCollider(collider)) {
           return false;
         }
       }
@@ -506,11 +506,17 @@ namespace LouisPaulet.RcCar {
           return false;
         }
 
-        float cellSupportHeight;
-        if (_worldQuery.TryGetTopTerrainHeight(cell, out int terrainHeight)
-          && !_worldQuery.IsUnderwaterAtSurface(cell, terrainHeight)) {
+        float cellSupportHeight = 0f;
+        bool hasTerrainSupport = _worldQuery.TryGetTopTerrainHeight(cell, out int terrainHeight);
+        if (hasTerrainSupport) {
           cellSupportHeight = terrainHeight;
-        } else {
+          if (_worldQuery.TryGetFinishedPlatformTopHeight(cell, terrainHeight, out int platformTopHeight)) {
+            cellSupportHeight = Mathf.Max(cellSupportHeight, platformTopHeight);
+          }
+          hasTerrainSupport = !_worldQuery.IsUnderwaterAtSurface(cell, cellSupportHeight);
+        }
+
+        if (!hasTerrainSupport) {
           int bridgeHeight = Mathf.RoundToInt(referenceSupportHeight);
           if (!_worldQuery.IsPathAt(cell, bridgeHeight)
             || _worldQuery.IsUnderwaterAtSurface(cell, bridgeHeight)

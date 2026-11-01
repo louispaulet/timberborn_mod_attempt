@@ -59,10 +59,10 @@ namespace LouisPaulet.RcCar {
     }
 
     /// <summary>
-    /// Identifies a single-cell Unity collider belonging to a path tile. This lets the car's
-    /// collider sweeps pass over the path's own block collider without ignoring nearby buildings.
+    /// Identifies a single-cell collider belonging to a path or a completed stair. This lets the
+    /// car's collider sweeps traverse those surfaces without ignoring nearby buildings.
     /// </summary>
-    public bool IsPathCollider(Collider collider) {
+    public bool IsDrivableSurfaceCollider(Collider collider) {
       Bounds bounds = collider.bounds;
       if (bounds.size.x > 1.5f || bounds.size.y > 1.5f || bounds.size.z > 1.5f) {
         return false;
@@ -72,7 +72,8 @@ namespace LouisPaulet.RcCar {
       int maxX = Mathf.FloorToInt(bounds.max.x - 0.001f);
       int minY = Mathf.FloorToInt(bounds.min.z + 0.001f);
       int maxY = Mathf.FloorToInt(bounds.max.z - 0.001f);
-      int pathHeight = Mathf.FloorToInt(bounds.center.y);
+      int minHeight = Mathf.FloorToInt(bounds.min.y + 0.001f);
+      int maxHeight = Mathf.FloorToInt(bounds.max.y - 0.001f);
 
       if (maxX < minX) {
         minX = maxX = Mathf.FloorToInt(bounds.center.x);
@@ -80,11 +81,17 @@ namespace LouisPaulet.RcCar {
       if (maxY < minY) {
         minY = maxY = Mathf.FloorToInt(bounds.center.z);
       }
+      if (maxHeight < minHeight) {
+        minHeight = maxHeight = Mathf.FloorToInt(bounds.center.y);
+      }
 
       for (int x = minX; x <= maxX; x++) {
         for (int y = minY; y <= maxY; y++) {
-          if (IsPathAt(new Vector2Int(x, y), pathHeight)) {
-            return true;
+          for (int height = minHeight; height <= maxHeight; height++) {
+            Vector2Int cell = new Vector2Int(x, y);
+            if (IsPathAt(cell, height) || HasFinishedStairsAt(new Vector3Int(x, y, height))) {
+              return true;
+            }
           }
         }
       }
@@ -93,15 +100,40 @@ namespace LouisPaulet.RcCar {
     }
 
     /// <summary>
-    /// Blocks buildings and natural resources while allowing paths, including bridge paths.
-    /// Check the vertical cells occupied by the car body, starting at its support surface.
+    /// Finds the deck height of a completed platform in this horizontal cell. Platform block
+    /// coordinates mark the supporting block, so the drivable deck is one level above it.
+    /// </summary>
+    public bool TryGetFinishedPlatformTopHeight(Vector2Int cell, int terrainHeight, out int height) {
+      height = int.MinValue;
+      for (int blockHeight = terrainHeight - 1; blockHeight <= terrainHeight + 1; blockHeight++) {
+        Vector3Int coordinates = new Vector3Int(cell.x, cell.y, blockHeight);
+        if (!_blockService.Contains(coordinates)) {
+          continue;
+        }
+
+        foreach (BlockObject blockObject in _blockService.GetObjectsAt(coordinates)) {
+          if (!blockObject.IsFinished || !HasBlockName(blockObject, "Platform")) {
+            continue;
+          }
+
+          height = Mathf.Max(height, blockObject.Coordinates.z + 1);
+        }
+      }
+
+      return height != int.MinValue;
+    }
+
+    /// <summary>
+    /// Blocks buildings and natural resources while allowing paths, finished stairs, and finished
+    /// platforms beneath their deck. Check the vertical cells occupied by the car body.
     /// </summary>
     public bool IsBlockedByNonPathObject(Vector2Int cell, int supportHeight, int carTopHeight) {
       for (int height = supportHeight; height <= carTopHeight; height++) {
         Vector3Int coordinates = new Vector3Int(cell.x, cell.y, height);
         if (_blockService.Contains(coordinates)
           && _blockService.AnyObjectAt(coordinates)
-          && !_pathService.IsPath(coordinates)) {
+          && !_pathService.IsPath(coordinates)
+          && !HasFinishedDrivableBlockAt(coordinates)) {
           return true;
         }
       }
@@ -129,6 +161,40 @@ namespace LouisPaulet.RcCar {
 
     private bool HasTerrainAtHeight(Vector2Int cell, int expectedHeight) {
       return TryGetTopTerrainHeight(cell, out int height) && height == expectedHeight;
+    }
+
+    private bool HasFinishedStairsAt(Vector3Int coordinates) {
+      if (!_blockService.Contains(coordinates)) {
+        return false;
+      }
+
+      foreach (BlockObject blockObject in _blockService.GetObjectsAt(coordinates)) {
+        if (blockObject.IsFinished && HasBlockName(blockObject, "Stairs")) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    private bool HasFinishedDrivableBlockAt(Vector3Int coordinates) {
+      bool foundObject = false;
+      foreach (BlockObject blockObject in _blockService.GetObjectsAt(coordinates)) {
+        foundObject = true;
+        if (!blockObject.IsFinished
+          || !HasBlockName(blockObject, "Stairs") && !HasBlockName(blockObject, "Platform")) {
+          return false;
+        }
+      }
+
+      return foundObject;
+    }
+
+    private static bool HasBlockName(BlockObject blockObject, string namePart) {
+      string gameObjectName = blockObject.GameObject != null ? blockObject.GameObject.name : string.Empty;
+      string displayName = blockObject.Name ?? string.Empty;
+      return gameObjectName.IndexOf(namePart, System.StringComparison.OrdinalIgnoreCase) >= 0
+        || displayName.IndexOf(namePart, System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
   }
 }
