@@ -15,6 +15,13 @@
     <EmbeddedResource Include="Assets/IronTeethRcCar_V2.obj" LogicalName="LouisPaulet.RcCar.Assets.IronTeethRcCar.obj" />
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(RcCarGameTests)' == 'true'">
+    <DefineConstants>$(DefineConstants);RC_CAR_GAME_TESTS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(RcCarGameTests)' == 'true'">
+    <Compile Include="../../tests/RcCar.GameTests/GameTestCommands.cs" Link="GameTestCommands.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="../RcCar.Core/RcCar.Core.csproj" />
   </ItemGroup>

@@ -3,10 +3,16 @@ using Timberborn.BlockSystem;
 using UnityEngine;
 namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarWorldQuery {
-    public bool IsAlignedStairTraversal(Vector3 from, Vector3 to, float supportHeight) {
+    public bool IsAlignedStairTraversal(Vector3 from, Vector3 to, float supportHeight, Quaternion rotation) {
       int supportLevel = Mathf.RoundToInt(supportHeight);
+      // The center can already be on the landing while the rear still needs stair support.
+      // Follow the longitudinal centerline so a stair in a neighboring lane cannot help.
+      Vector3 reach = rotation * Vector3.forward * RcCarMovementSettings.CarHalfExtents.z;
       for (int lowHeight = supportLevel - 1; lowHeight <= supportLevel; lowHeight++) {
-        if (TryFindAlignedStair(from, to, lowHeight, out _)) return true;
+        for (int sample = -2; sample <= 2; sample++) {
+          Vector3 offset = reach * (sample / 2f);
+          if (TryFindAlignedStair(from + offset, to + offset, lowHeight, out _)) return true;
+        }
       }
       return false;
     }

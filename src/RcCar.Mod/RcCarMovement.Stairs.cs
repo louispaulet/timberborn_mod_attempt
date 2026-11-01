@@ -34,7 +34,7 @@ namespace LouisPaulet.RcCar {
         new RcCarTerrainSurface(Mathf.RoundToInt(referenceSupportHeight)),
         new RcCarTerrainSurface(Mathf.RoundToInt(targetSupportHeight)),
         targetHasUniformSupport,
-        _worldQuery.IsAlignedStairTraversal(currentPosition, desiredPosition, referenceSupportHeight));
+        _worldQuery.IsAlignedStairTraversal(currentPosition, desiredPosition, referenceSupportHeight, rotation));
       bool stairHeightChange = Mathf.Abs(Mathf.Abs(stepHeight) - RcCarMovementSettings.MaxStairHeightChange)
           <= RcCarMovementSettings.SupportHeightTolerance
         && _worldQuery.CanTraverseByStairs(

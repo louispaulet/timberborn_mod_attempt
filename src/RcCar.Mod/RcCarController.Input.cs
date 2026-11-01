@@ -9,6 +9,9 @@ namespace LouisPaulet.RcCar {
         _spawnAttempted = true;
         SpawnCar();
       }
+#if RC_CAR_GAME_TESTS
+      ProcessGameTestCommand();
+#endif
 
       Keyboard? keyboard = Keyboard.current;
       if (keyboard == null || _car == null) {
