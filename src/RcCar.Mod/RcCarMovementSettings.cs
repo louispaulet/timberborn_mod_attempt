@@ -12,6 +12,7 @@ namespace LouisPaulet.RcCar {
     public const int FlatGroundSearchStartRadius = 8;
     public const float GroundClearance = 0.03f;
     public const float CollisionSkinWidth = 0.03f;
+    public const float MinimumWallSlipRatio = 0.18f;
     public const float MaxStairHeightChange = 1f;
     public const float SupportHeightTolerance = 0.03f;
     public const float MovementSubstepLength = 0.1f;

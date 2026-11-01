@@ -12,7 +12,9 @@ namespace LouisPaulet.RcCar {
           RcCarMovementSettings.CarHalfExtents, stepDisplacement, _car!.transform,
           _worldQuery.IsDrivableSurfaceCollider, Physics.DefaultRaycastLayers,
           RcCarMovementSettings.CollisionSkinWidth, RcCarMovementSettings.MaxCollisionSlideIterations,
-          out bool collided);
+          out bool collided,
+          rotation * Vector3.right * (_steering < -0.05f ? -1f : 1f),
+          RcCarMovementSettings.MinimumWallSlipRatio);
         if (!TryGetSupportedPosition(resolved, rotation, supportHeight, mapSize, false, out Vector3 grounded)) {
           if (!TryTraverseStairs(currentPosition, desiredPosition, rotation, supportHeight, mapSize, out grounded)) break;
           currentPosition = grounded; supportHeight = FloorHeight(currentPosition); continue;

@@ -1,4 +1,5 @@
 using System;
+using LouisPaulet.RcCar.Core;
 using UnityEngine;
 
 namespace LouisPaulet.RcCar {
@@ -29,7 +30,9 @@ namespace LouisPaulet.RcCar {
       int collisionMask,
       float skinWidth,
       int maxSlideIterations,
-      out bool collided) {
+      out bool collided,
+      Vector3 preferredSlideDirection = default,
+      float minimumWallSlipRatio = 0f) {
       Vector3 position = startPosition;
       Vector3 remaining = Vector3.ProjectOnPlane(desiredDisplacement, Vector3.up);
       collided = false;
@@ -70,6 +73,14 @@ namespace LouisPaulet.RcCar {
 
         Vector3 untravelled = remaining - travelled;
         Vector3 slide = Vector3.ProjectOnPlane(untravelled, closestHit.normal);
+        if (iteration == 0 && minimumWallSlipRatio > 0f) {
+          var lateral = RcCarWallSlide.Resolve(
+            new System.Numerics.Vector2(untravelled.x, untravelled.z),
+            new System.Numerics.Vector2(closestHit.normal.x, closestHit.normal.z),
+            new System.Numerics.Vector2(preferredSlideDirection.x, preferredSlideDirection.z),
+            minimumWallSlipRatio);
+          slide = new Vector3(lateral.X, 0f, lateral.Y);
+        }
         if (slide.sqrMagnitude >= untravelled.sqrMagnitude - MinProgressSqrMagnitude) {
           break;
         }
