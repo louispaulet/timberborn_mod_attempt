@@ -16,6 +16,11 @@ public sealed class SurfaceTraversalTests {
       new RcCarPathSurface(new RcCarPlatformSurface(height)), null, 0, 1));
   }
 
+  [Fact]
+  public void ProgressAcrossUpperPlatformDoesNotRequireAnotherStair() {
+    Assert.True(Can(new RcCarPlatformSurface(1), new RcCarPlatformSurface(1), null, 0, 1));
+  }
+
   [Theory]
   [InlineData(1, 0)]
   [InlineData(0, 1)]

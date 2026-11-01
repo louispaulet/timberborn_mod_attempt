@@ -1,3 +1,4 @@
+using LouisPaulet.RcCar.Core;
 using UnityEngine;
 namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarMovement {
@@ -22,13 +23,23 @@ namespace LouisPaulet.RcCar {
       float stepHeight = targetGroundedPosition.y - currentPosition.y;
       float targetSupportHeight = targetGroundedPosition.y
         - RcCarMovementSettings.CarHalfExtents.y - RcCarMovementSettings.GroundClearance;
-      bool stairAligned = Mathf.Abs(stepHeight) <= RcCarMovementSettings.SupportHeightTolerance
-        ? _worldQuery.IsAlignedStairTraversal(currentPosition, desiredPosition, referenceSupportHeight)
-        : Mathf.Abs(Mathf.Abs(stepHeight) - RcCarMovementSettings.MaxStairHeightChange)
-            <= RcCarMovementSettings.SupportHeightTolerance
-          && _worldQuery.CanTraverseByStairs(
-            currentPosition, desiredPosition, referenceSupportHeight, targetSupportHeight);
-      if (!stairAligned) {
+      RcCarCell fromCell = ToSurfaceCell(currentPosition);
+      RcCarCell toCell = ToSurfaceCell(desiredPosition);
+      float dx = desiredPosition.x - currentPosition.x;
+      float dz = desiredPosition.z - currentPosition.z;
+      bool sameHeightProgression = RcCarSurfaceTraversal.CanTraverse(
+        new RcCarTerrainSurface(Mathf.RoundToInt(referenceSupportHeight)),
+        new RcCarTerrainSurface(Mathf.RoundToInt(targetSupportHeight)),
+        fromCell,
+        toCell,
+        null,
+        dx,
+        dz);
+      bool stairHeightChange = Mathf.Abs(Mathf.Abs(stepHeight) - RcCarMovementSettings.MaxStairHeightChange)
+          <= RcCarMovementSettings.SupportHeightTolerance
+        && _worldQuery.CanTraverseByStairs(
+          currentPosition, desiredPosition, referenceSupportHeight, targetSupportHeight);
+      if (!sameHeightProgression && !stairHeightChange) {
         return false;
       }
 
@@ -72,5 +83,8 @@ namespace LouisPaulet.RcCar {
       steppedPosition = finalPosition;
       return true;
     }
+
+    private static RcCarCell ToSurfaceCell(Vector3 position) =>
+      new RcCarCell(Mathf.FloorToInt(position.x), Mathf.FloorToInt(position.z));
   }
 }

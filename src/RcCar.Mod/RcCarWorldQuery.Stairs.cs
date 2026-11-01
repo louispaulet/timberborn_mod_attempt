@@ -17,13 +17,5 @@ namespace LouisPaulet.RcCar {
       return RcCarSurfaceTraversal.CanTraverse(fromSurface, toSurface,
         fromCell, toCell, stair, displacement.x, displacement.z);
     }
-
-    public bool IsAlignedStairTraversal(Vector3 from, Vector3 to, float supportHeight) {
-      int supportLevel = Mathf.RoundToInt(supportHeight);
-      for (int lowHeight = supportLevel - 1; lowHeight <= supportLevel; lowHeight++) {
-        if (TryFindAlignedStair(from, to, lowHeight, out _)) return true;
-      }
-      return false;
-    }
   }
 }
