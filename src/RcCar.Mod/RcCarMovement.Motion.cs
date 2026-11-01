@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarMovement {
-    private Vector3 Move(Vector3 currentPosition, Quaternion rotation, Vector3 desiredDisplacement,
+    private Vector3 MoveWithSupport(Vector3 currentPosition, Quaternion rotation, Vector3 desiredDisplacement,
       float supportHeight, Vector2Int mapSize) {
       int moveSteps = Mathf.Max(1, Mathf.CeilToInt(desiredDisplacement.magnitude / RcCarMovementSettings.MovementSubstepLength));
       Vector3 stepDisplacement = desiredDisplacement / moveSteps;

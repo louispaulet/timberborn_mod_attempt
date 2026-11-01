@@ -87,13 +87,15 @@ make install
 - The camera follows the car while driving.
 - Flat terrain and platforms at the car's current height are drivable. Any height change blocks movement unless a completed, aligned stair connects the two levels; this applies uphill and downhill.
 - Paths keep their 1.5× forward speed multiplier over raw ground. Path speed does not allow a height change.
-- Pushing against a wall produces a gentle sideways slip (18% of blocked movement), with A/D steering influencing the escape side. Glancing contact keeps its natural slide direction; a stationary car does not drift. Stair transitions take priority over wall slip.
+- Pushing against a wall or a blocked terrain/platform edge produces a gentle sideways slip (18% of blocked movement), with A/D steering influencing the escape side. Every sideways move requires collision clearance and support at the same height. Glancing contact keeps its natural slide direction; a stationary car does not drift. Stair transitions take priority over wall slip.
 
 Run `make test-fast` and `make build-rc-car` for non-game checks. Stair continuation checks the car's longitudinal footprint, so the rear can clear the stair after the center reaches the landing. Height changes still require a completed, aligned stair under the center; nearby stairs cannot authorize climbing another block.
 
 In-game verification on 2026-11-01 passed ascent onto the landing, continuation from the previously stuck position, descent, blocked ascent/descent at neighboring edges without stairs, and rejection of unfinished platforms. WASD ascent was also checked visually in the disposable `RcCarStairFix-20261101` settlement.
 
 The same scene also passed five wall-slip checks: head-on right slip, left steering, no stationary drift, natural glancing motion, and blocked corner movement without penetration. The test bridge creates temporary Unity wall colliders for these checks and removes them afterward. `MinimumWallSlipRatio` in `RcCarMovementSettings.cs` controls the slip strength.
+
+Support-blocked edges are checked separately because they do not necessarily produce a Unity collider hit. In the normal release build, holding W at the platform edge in disposable `RcCarSlipControls-20261101` moved the car from x=55.450 to x=55.020 while z=50.730 and height=5.360 stayed constant. Before the support-slip fix, an additional two seconds holding W at that edge left the position unchanged. This check uses actual keyboard input through `Drive`, without the optional movement-command bridge.
 
 The repeatable Unity regression script is `tests/RcCar.GameTests/check_stair_scene.py`; its docstring describes the required disposable scene. Build the optional test bridge with `.tools/dotnet/dotnet build src/RcCar.Mod/RcCar.Mod.csproj -c Release -p:RcCarGameTests=true`, copy its DLL into the local RC Car mod as `Code.dll`, and restart in that test scene. Run `python3 tests/RcCar.GameTests/check_stair_scene.py` while the game is running. The bridge processes file commands on Unity's main thread through the actual movement and physics code. Set `RC_CAR_GAME_TEST_DIR` at launch and pass the same directory with `--directory` to override its default generated-files directory. `make install-rc-car` restores the normal build, which excludes the bridge.
 

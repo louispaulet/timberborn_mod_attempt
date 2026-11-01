@@ -57,9 +57,9 @@ def main():
     p = drive((62.5, 4.36, 53, 180), (0, -.08))
     check("neighboring_stair_does_not_allow_platform_climb", p,
           abs(p[1] - 4.36) < .01 and p[2] > 51)
-    p = drive((62.5, 5.36, 49, 0), (0, .08))
-    check("platform_edge_without_stair_blocks_descent", p,
-          abs(p[1] - 5.36) < .01 and p[2] < 51)
+    p = drive((64.5, 5.36, 49, 0), (0, .08))
+    check("support_blocked_platform_edge_slips_without_descending", p,
+          p[0] > 64.8 and abs(p[1] - 5.36) < .01 and p[2] < 51)
     p = drive((63.5, 5.36, 49, 180), (0, -.08))
     check("unfinished_platform_blocks_progress", p,
           abs(p[1] - 5.36) < .01 and p[2] >= 48.7)
