@@ -23,11 +23,11 @@ namespace LouisPaulet.RcCar {
       float targetSupportHeight = targetGroundedPosition.y
         - RcCarMovementSettings.CarHalfExtents.y - RcCarMovementSettings.GroundClearance;
       bool stairAligned = Mathf.Abs(stepHeight) <= RcCarMovementSettings.SupportHeightTolerance
-        ? _worldQuery.IsAlignedStairTraversal(currentPosition, desiredPosition, rotation, referenceSupportHeight)
+        ? _worldQuery.IsAlignedStairTraversal(currentPosition, desiredPosition, referenceSupportHeight)
         : Mathf.Abs(Mathf.Abs(stepHeight) - RcCarMovementSettings.MaxStairHeightChange)
             <= RcCarMovementSettings.SupportHeightTolerance
           && _worldQuery.CanTraverseByStairs(
-            currentPosition, desiredPosition, rotation, referenceSupportHeight, targetSupportHeight);
+            currentPosition, desiredPosition, referenceSupportHeight, targetSupportHeight);
       if (!stairAligned) {
         return false;
       }

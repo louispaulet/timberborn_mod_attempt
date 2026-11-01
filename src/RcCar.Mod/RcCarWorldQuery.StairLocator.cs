@@ -4,29 +4,31 @@ using UnityEngine;
 
 namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarWorldQuery {
-    private bool TryFindAlignedStair(Vector3 from, Vector3 to, Quaternion rotation,
-      int lowHeight, out RcCarStairConnector? connector) {
+    private bool TryFindAlignedStair(Vector3 from, Vector3 to, int lowHeight,
+      out RcCarStairConnector? connector) {
       connector = null;
-      Vector3 right = rotation * Vector3.right;
-      Vector3 forward = rotation * Vector3.forward;
-      float extentX = Mathf.Abs(right.x) * RcCarMovementSettings.CarHalfExtents.x
-        + Mathf.Abs(forward.x) * RcCarMovementSettings.CarHalfExtents.z;
-      float extentY = Mathf.Abs(right.z) * RcCarMovementSettings.CarHalfExtents.x
-        + Mathf.Abs(forward.z) * RcCarMovementSettings.CarHalfExtents.z;
-      int minX = Mathf.CeilToInt(Mathf.Min(from.x, to.x) - extentX - 1f);
-      int maxX = Mathf.FloorToInt(Mathf.Max(from.x, to.x) + extentX);
-      int minY = Mathf.CeilToInt(Mathf.Min(from.z, to.z) - extentY - 1f);
-      int maxY = Mathf.FloorToInt(Mathf.Max(from.z, to.z) + extentY);
+      RcCarCell fromCell = ToCell(from);
+      RcCarCell toCell = ToCell(to);
+      float dx = to.x - from.x;
+      float dy = to.z - from.z;
 
-      for (int x = minX; x <= maxX; x++) {
-        for (int y = minY; y <= maxY; y++) {
-          if (TryGetStairConnector(new Vector2Int(x, y), lowHeight, out connector)
-            && connector!.AlignsWithDirection(to.x - from.x, to.z - from.z)) return true;
-        }
+      if (TryGetStairConnector(new Vector2Int(fromCell.X, fromCell.Y), lowHeight, out connector)
+        && connector!.AlignsWith(fromCell, toCell, dx, dy)) {
+        return true;
       }
+
+      if (toCell != fromCell
+        && TryGetStairConnector(new Vector2Int(toCell.X, toCell.Y), lowHeight, out connector)
+        && connector!.AlignsWith(fromCell, toCell, dx, dy)) {
+        return true;
+      }
+
       connector = null;
       return false;
     }
+
+    private static RcCarCell ToCell(Vector3 position) =>
+      new RcCarCell(Mathf.FloorToInt(position.x), Mathf.FloorToInt(position.z));
 
     private bool TryGetStairConnector(Vector2Int cell, int lowHeight, out RcCarStairConnector? connector) {
       connector = null;

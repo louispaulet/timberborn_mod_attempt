@@ -39,6 +39,12 @@ public sealed class SurfaceTraversalTests {
   }
 
   [Fact]
+  public void StairBesideTransitionDoesNotConnectPlatformEdge() {
+    var adjacentStair = new RcCarStairConnector(new RcCarCell(4, 4), 0, RcCarStairAxis.NorthSouth, true);
+    Assert.False(Can(new RcCarTerrainSurface(0), new RcCarPlatformSurface(1), adjacentStair, 0, 1));
+  }
+
+  [Fact]
   public void StairCanCarryTheCarAcrossItsTileWhileSupportHeightIsChanging() {
     var stair = new RcCarStairConnector(LowCell, 0, RcCarStairAxis.NorthSouth, true);
     Assert.True(stair.AlignsWith(LowCell, HighCell, 0, 1));
