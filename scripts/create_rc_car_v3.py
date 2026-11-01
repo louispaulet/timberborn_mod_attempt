@@ -131,7 +131,7 @@ for obj in list(scene.objects):
             slot.material = dark
         elif 'TealGlass' in name:
             slot.material = amber
-    if obj.name.startswith('V2 chemical cell') or obj.name.startswith('Bonnet pinstripe') or obj.name == 'Sloped bonnet' or obj.name.startswith('Gear emblem'):
+    if obj.name.startswith('V2 chemical cell') or obj.name.startswith('Bonnet pinstripe') or obj.name == 'Sloped bonnet' or obj.name.startswith(('Gear emblem', 'Gear tooth', 'Bonnet center rib')):
         obj.hide_render = True
         obj.hide_set(True)
 
@@ -201,21 +201,31 @@ def text(name, body, loc, size, mat, rear=False):
     data.materials.append(mat)
     return obj
 
-# Planked service bonnet, metal spine, hinges and fasteners.
+# Recess the planks into a deep steel seat that intersects the rounded body.
+# The former plank underside was .0205 above the body's highest point.
+box('bonnet recessed steel seat', (0, -.30, .189), (.435, .408, .046), steel, .011)
 for i in range(5):
     x = (i - 2) * .081
-    box('bonnet oak plank', (x, -.31, .242), (.077, .397, .028), wood_light if i % 2 else wood)
+    box('bonnet oak plank', (x, -.30, .214), (.077, .38, .028), wood_light if i % 2 else wood)
 for y in (-.46, -.16):
-    box('bonnet steel strap', (0, y, .263), (.423, .022, .009), steel)
+    box('bonnet steel strap', (0, y, .231), (.423, .022, .009), steel)
     for x in (-.185, -.09, .09, .185):
-        cyl('bonnet strap rivet', (x, y, .270), .005, .005, brass, vertices=12)
-box('bonnet central spine', (0, -.31, .269), (.018, .39, .008), brass)
-ring('hood gear medallion', (0, -.33, .283), .039, .005, brass)
+        cyl('bonnet strap rivet', (x, y, .238), .005, .005, brass, vertices=12)
+box('bonnet front spine', (0, -.435, .231), (.018, .11, .008), brass)
+box('bonnet rear spine', (0, -.1925, .231), (.018, .165, .008), brass)
+ring('hood gear medallion', (0, -.33, .233), .039, .005, brass)
 for i in range(12):
     a = i * math.tau / 12
-    ob = box('hood cog tooth', (.047 * math.sin(a), -.33 + .047 * math.cos(a), .283), (.012, .015, .01), brass, .001)
+    ob = box('hood cog tooth', (.047 * math.sin(a), -.33 + .047 * math.cos(a), .233), (.012, .015, .01), brass, .001)
     ob.rotation_euler.z = -a
-cyl('hood dark enamel', (0, -.33, .281), .032, .007, dark)
+cyl('hood dark enamel', (0, -.33, .2315), .032, .007, dark)
+for x in (-.135, .135):
+    box('bonnet rear hinge leaf', (x, -.112, .219), (.049, .035, .008), steel)
+    cyl('bonnet rear hinge pin', (x, -.108, .226), .006, .058, brass, (1, 0, 0))
+for side in (-1, 1):
+    box('bonnet side latch anchor', (side * .216, -.39, .191), (.013, .035, .041), dark)
+    box('bonnet side latch strap', (side * .224, -.39, .205), (.009, .014, .044), brass, .0015)
+    cyl('bonnet side latch pivot', (side * .231, -.39, .196), .004, .006, steel, (1, 0, 0), 12)
 
 # Taller sealed chemical cells, visible liquid headspace and safety cages.
 for x, fluid, label in [(-.112, green, 'EXTRACT'), (.112, red, 'BADWATER')]:
