@@ -7,7 +7,8 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - The official mod manifest, build, package, and install path are in place.
 - The spawned vehicle now loads an original Blender-authored Iron Teeth-style RC car mesh embedded in the mod assembly.
 - Spawn search checks dry, level terrain, water, blocked game cells, and physics overlaps near the map center.
-- WASD controls eased acceleration, reverse, and steering; terrain support and collider sweeps constrain movement.
+- WASD controls eased acceleration, reverse, and steering; the car stops at height changes unless a completed, aligned stair connects the levels. This rule applies both uphill and downhill; ramps and platform edges alone do not authorize a height change.
+- Paths retain a 1.5× forward speed multiplier over raw ground. Path tiles do not authorize height changes.
 - The camera follows while driving. Escape exits driving mode and V resumes it.
 - The editable Blender source and the exported OBJ used by the mod are in `src/RcCar.Mod/Assets/`.
 
@@ -35,7 +36,7 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - [x] Replace the orange cube with a recognizable small RC car model, using game assets or a simple original model with visible wheels.
 - [x] Let the car drive over completed path tiles. Path colliders are excluded from car collision and clearance checks while other building colliders remain blocking. **Live check:** on the flatmap copy, the car crossed the completed path at z=52 without stopping.
 - [ ] Verify the path speed increase against dirt in a live run. **Code is in place:** 7 m/s on dirt and 10.5 m/s on paths (1.5×). The car crossed a completed path, but the numerical speed comparison has not yet been measured.
-- [x] Support ramps and stairs while keeping the vehicle grounded and stable; define the maximum climbable slope/step. **Live check:** on the reusable flatmap, the car climbed from ground height 4.36 to the completed platform at 5.36 through the completed stair, then returned to ground height 4.36. The maximum supported rise remains one block per tile.
+- [ ] Allow height changes only through a completed, aligned stair; block terrain cliffs, ramps, and higher/lower platform edges without a stair. The game-independent policy tests cover both ascent and descent. **In-game regression check pending** for the stricter stairs-only rule.
 - [x] Verify smooth acceleration, braking, reverse, and steering at low and high speed, including when input is interrupted or driving mode exits. **Live check:** forward and reverse moved the car on flat dirt and Diorama terrain; a 2-second flat-dirt run moved about 13.4 m, reverse moved the car about 5.0 m, and a forward-to-coast steering sequence moved it about 2.5 m. Escape stopped driving and V resumed it.
 - [x] Verify camera follow through turns and obstacles, and define how the camera behaves after Escape and when V resumes driving. **Live check:** the camera followed movement and steering, stayed centered when the car stopped at a river-bank edge, remained where left after Escape, and returned to the car after V.
 
@@ -49,6 +50,7 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - Escape exited driving and stopped the car. After moving the camera with the harness, V resumed driving and returned the camera target to the car's position. The Diorama run also showed the car remain on dry land at the river edge.
 - Path traversal is now verified in Timberborn on the reusable flatmap: the car crossed the completed row at z=52 (from approximately `(67.63, 4.36, 53.85)` to `(68.26, 4.36, 49.21)`) without sticking on the path. The 7 m/s dirt and 10.5 m/s path speed limits are implemented; an isolated live speed comparison remains open.
 - The completed stair at `(63, 51, 4)` and adjacent platform were verified live with the latest build: the car climbed one block to the platform and descended to ground while staying grounded.
+- The stair climb above was verified before the stairs-only policy refactor. Do not treat it as verification of the latest build; no game was launched for this change.
 - No RC Car exception appeared in the Player.log during these checks.
 
 ### P2 — Regression checks and polish
@@ -63,6 +65,6 @@ P0 movement and safety work is complete. P1 behavior and P2 regression coverage 
 - [x] Open water and terrain edges block movement in live play; building and natural-cell blocking are implemented but were not directly exercised live.
 - [x] Paths are traversable. (Completed path crossing verified live on the flatmap.)
 - [ ] Paths produce a measurable speed increase over dirt. (Rule implemented at 1.5×; live comparison remains pending.)
-- [x] Ramps and supported stairs can be climbed without the car flying or getting stuck. (Completed flatmap stair climb and descent verified live; one-block-per-tile limit.)
+- [ ] Height changes are blocked without a completed aligned stair; verify stair ascent and descent in-game after the latest code change.
 - [x] The visible vehicle reads as an RC car rather than a colored cube.
 - [x] Camera follow, Escape to exit, and V to resume work in a live Timberborn 1.1 settlement.

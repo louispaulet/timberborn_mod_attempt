@@ -53,7 +53,7 @@ make smoke-fake
 make build
 ```
 
-`make test-fast` runs Unity-free xUnit tests for the core logic: JSON/response shape, four-button interaction state, menu validation, replay keys, deterministic water math, and building alias matching.
+`make test-fast` runs Unity-free xUnit tests for the harness and RC car core logic, including terrain-height transitions, stair validation, path speed, JSON/response shape, interaction state, deterministic water math, and building aliases.
 
 `make smoke-fake` starts `scripts/fake-timberborn-harness` on `http://127.0.0.1:18080`, drives the checked-in CLI and companion once, verifies deterministic water/building endpoints, and confirms an invalid placement returns controlled JSON failure. It does not launch Timberborn.
 
@@ -80,13 +80,15 @@ make install
 
 ## RC Car Prototype
 
-`make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Enable it in Timberborn's Mod Manager and start a settlement. It embeds the Iron Teeth RC car v2 model, with its Motors grille badge, radio antenna, glass chemical battery cells, and timber-and-steel bodywork. The prototype drives on a horizontal plane; collision handling, terrain following, path speed limits, stairs, and garage integration remain future work.
+`make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Its package includes `Code.dll` and the game-independent `RcCar.Core.dll`. The vehicle uses the Iron Teeth RC car v2 model and supports terrain movement, collision checks, and path speed boosts.
 
 - **WASD** accelerates, reverses, and steers.
 - **Escape** exits driving mode; **V** resumes it.
-- The camera follows the cube while driving.
+- The camera follows the car while driving.
+- Flat terrain and platforms at the car's current height are drivable. Any height change blocks movement unless a completed, aligned stair connects the two levels; this applies uphill and downhill.
+- Paths keep their 1.5× forward speed multiplier over raw ground. Path speed does not allow a height change.
 
-This first prototype moves the cube on a horizontal plane from a level terrain spawn. Driving collisions, terrain-following, path speed, stairs, vehicle assets, and a garage remain for later iterations.
+Run `make test-fast` and `make build-rc-car` for non-game checks. The latest stairs-only movement change still needs an in-game regression check.
 
 ## Harness Commands
 

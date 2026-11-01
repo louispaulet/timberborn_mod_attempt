@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../RcCar.Core/RcCar.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Bindito.Core">
       <HintPath>$(TimberbornManagedDir)/Bindito.Core.dll</HintPath>
       <Private>false</Private>

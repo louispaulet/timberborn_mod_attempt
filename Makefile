@@ -13,11 +13,13 @@ FAKE_HARNESS_URL := http://127.0.0.1:18080
 MOD_NAME := AiHarness
 PROJECT := src/AiHarness.Mod/AiHarness.Mod.csproj
 TEST_PROJECT := tests/AiHarness.Core.Tests/AiHarness.Core.Tests.csproj
+RC_CAR_TEST_PROJECT := tests/RcCar.Core.Tests/RcCar.Core.Tests.csproj
 DLL := src/AiHarness.Mod/bin/Release/netstandard2.1/AiHarness.Mod.dll
 CORE_DLL := src/AiHarness.Mod/bin/Release/netstandard2.1/AiHarness.Core.dll
 PACKAGE_DIR := dist/AiHarness
 RC_CAR_PROJECT := src/RcCar.Mod/RcCar.Mod.csproj
 RC_CAR_DLL := src/RcCar.Mod/bin/Release/netstandard2.1/RcCar.Mod.dll
+RC_CAR_CORE_DLL := src/RcCar.Core/bin/Release/netstandard2.1/RcCar.Core.dll
 RC_CAR_PACKAGE_DIR := dist/RcCar
 
 LOCAL_DOTNET := $(CURDIR)/.tools/dotnet/dotnet
@@ -58,6 +60,7 @@ build: bootstrap verify-env
 
 test-fast: bootstrap
 	"$(DOTNET)" test "$(TEST_PROJECT)" -c Release
+	"$(DOTNET)" test "$(RC_CAR_TEST_PROJECT)" -c Release
 
 watch-fast: bootstrap
 	"$(DOTNET)" watch --project "$(TEST_PROJECT)" test -c Release
@@ -156,6 +159,7 @@ package-rc-car: build-rc-car
 	mkdir -p "$(RC_CAR_PACKAGE_DIR)"
 	cp mod-rc-car/manifest.json "$(RC_CAR_PACKAGE_DIR)/manifest.json"
 	cp "$(RC_CAR_DLL)" "$(RC_CAR_PACKAGE_DIR)/Code.dll"
+	cp "$(RC_CAR_CORE_DLL)" "$(RC_CAR_PACKAGE_DIR)/RcCar.Core.dll"
 	@find "$(RC_CAR_PACKAGE_DIR)" -maxdepth 2 -type f -print
 
 install-rc-car: package-rc-car
