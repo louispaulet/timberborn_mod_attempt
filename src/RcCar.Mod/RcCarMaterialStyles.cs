@@ -3,6 +3,17 @@ using UnityEngine;
 namespace LouisPaulet.RcCar {
   internal static class RcCarMaterialStyles {
     public static RcCarMaterialStyle Get(string name) => name switch {
+      "V3_worn_blue_gunmetal" => new(95, 106, 111, .78f, .38f),
+      "V3_charcoal_cast_iron" => new(52, 58, 61, .65f, .52f),
+      "V3_aged_brass" => new(186, 147, 85, .80f, .37f),
+      "V3_oxidised_iron" => new(137, 75, 44, .48f, .65f),
+      "V3_sawn_warm_oak" => new(153, 106, 63, 0f, .67f),
+      "V3_honey_timber" => new(177, 136, 87, 0f, .61f),
+      "V3_green_extract" => new(101, 205, 41, .12f, .22f, true, 255, false, .50f),
+      "V3_red_badwater" => new(200, 36, 28, .12f, .23f, true, 255, false, .40f),
+      "V3_warm_lamp_glass" => new(255, 186, 89, .15f, .19f, true, 255, false, 2f),
+      "V3_enamel_lettering" => new(229, 214, 177, .10f, .50f),
+      "V3_clear_chemical_vessel" => new(218, 243, 237, .25f, .16f, false, 30, true),
       "IronTeeth_Charcoal" => new(41, 44, 46, .58f, .58f),
       "IronTeeth_Gunmetal" => new(74, 79, 85, .78f, .42f),
       "IronTeeth_WeatheredSteel" => new(122, 129, 132, .72f, .40f),

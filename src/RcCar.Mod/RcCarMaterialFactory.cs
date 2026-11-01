@@ -15,6 +15,13 @@ namespace LouisPaulet.RcCar {
 
     private static Material Create(Shader shader, string name) {
       RcCarMaterialStyle style = RcCarMaterialStyles.Get(name);
+      // Use an explicitly alpha-blended shader for glass. A runtime switch on
+      // URP/Lit can fall back to an opaque variant in the shipped game player.
+      if (style.Transparent) {
+        shader = Shader.Find("Sprites/Default") ?? Shader.Find("UI/Default")
+          ?? throw new System.InvalidOperationException("No alpha-blended shader was found for RC car glass.");
+        Debug.Log("[LouisPaulet.RcCar] Glass material " + name + " uses " + shader.name + ".");
+      }
       var material = new Material(shader) { name = name, color = style.Color };
       if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", style.Color);
       if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", style.Metallic);
@@ -43,6 +50,8 @@ namespace LouisPaulet.RcCar {
       if (material.HasProperty("_AlphaClip")) material.SetFloat("_AlphaClip", 0f);
       material.DisableKeyword("_ALPHATEST_ON"); material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
       material.EnableKeyword("_ALPHABLEND_ON"); material.renderQueue = (int)RenderQueue.Transparent;
+      material.SetShaderPassEnabled("ShadowCaster", false);
+      material.SetShaderPassEnabled("DepthOnly", false);
     }
   }
 }
