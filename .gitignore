@@ -220,6 +220,9 @@ __marimo__/
 # Local project tools
 .tools/
 
+# Blender automatic save backups
+*.blend[1-9]
+
 # .NET/C# build outputs
 bin/
 obj/
