@@ -27,6 +27,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Timberborn.BottomBarSystem">
+      <HintPath>$(TimberbornManagedDir)/Timberborn.BottomBarSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>$(TimberbornManagedDir)/UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Bindito.Core">
       <HintPath>$(TimberbornManagedDir)/Bindito.Core.dll</HintPath>
       <Private>false</Private>

@@ -33,6 +33,9 @@ namespace LouisPaulet.RcCar {
       _movement = new RcCarMovement(mapSize, worldQuery);
     }
 
+    public bool IsDriving => _car != null && _isDriving;
+    public bool CarAvailable => _car != null;
+
     public void Load() {
       _spawnAttempted = false;
       _inputService.AddInputProcessor(this);
