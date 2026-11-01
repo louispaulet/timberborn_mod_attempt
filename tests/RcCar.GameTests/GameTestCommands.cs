@@ -7,6 +7,7 @@ using UnityEngine;
 
 namespace LouisPaulet.RcCar {
   public partial class RcCarController {
+    private readonly System.Collections.Generic.List<GameObject> _gameTestWalls = new System.Collections.Generic.List<GameObject>();
     private void ProcessGameTestCommand() {
       string directory = Environment.GetEnvironmentVariable("RC_CAR_GAME_TEST_DIR")
         ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -27,12 +28,28 @@ namespace LouisPaulet.RcCar {
             break;
           case "move":
             _car.transform.position = _movement.GameTestMove(_car.transform.position,
-              _car.transform.rotation, new Vector3(Number(1), 0f, Number(2)));
+              _car.transform.rotation, new Vector3(Number(1), 0f, Number(2)),
+              args.Length > 3 ? Number(3) : 0f);
+            Physics.SyncTransforms();
+            break;
+          case "wall":
+            var wall = new GameObject("RC Car game test wall");
+            wall.transform.position = new Vector3(Number(1), Number(2), Number(3));
+            wall.AddComponent<BoxCollider>().size = new Vector3(Number(4), Number(5), Number(6));
+            _gameTestWalls.Add(wall);
+            Physics.SyncTransforms();
+            break;
+          case "clear-walls":
+            foreach (GameObject testWall in _gameTestWalls) {
+              testWall.SetActive(false);
+              UnityEngine.Object.Destroy(testWall);
+            }
+            _gameTestWalls.Clear();
             Physics.SyncTransforms();
             break;
           case "status": break;
           case "probe":
-            File.WriteAllText(Path.Combine(directory, "response.txt"),
+            WriteGameTestResponse(directory,
               _movement.GameTestProbe(_car.transform.position, _car.transform.rotation,
                 new Vector3(Number(1), 0f, Number(2))));
             return;
@@ -40,17 +57,27 @@ namespace LouisPaulet.RcCar {
         }
         _cameraService.MoveTargetTo(_car.transform.position);
         Vector3 p = _car.transform.position;
-        File.WriteAllText(Path.Combine(directory, "response.txt"),
+        WriteGameTestResponse(directory,
           string.Format(CultureInfo.InvariantCulture, "{0:R} {1:R} {2:R}", p.x, p.y, p.z));
       } catch (Exception e) {
-        File.WriteAllText(Path.Combine(directory, "response.txt"), "ERROR " + e.Message);
+        WriteGameTestResponse(directory, "ERROR " + e.Message);
       }
+    }
+
+    private static void WriteGameTestResponse(string directory, string contents) {
+      string pending = Path.Combine(directory, "response.pending");
+      string response = Path.Combine(directory, "response.txt");
+      File.WriteAllText(pending, contents);
+      if (File.Exists(response)) File.Delete(response);
+      File.Move(pending, response);
     }
   }
 
   internal sealed partial class RcCarMovement {
-    internal Vector3 GameTestMove(Vector3 position, Quaternion rotation, Vector3 displacement) =>
-      Move(position, rotation, displacement, FloorHeight(position), _mapSize.TerrainSize2D);
+    internal Vector3 GameTestMove(Vector3 position, Quaternion rotation, Vector3 displacement, float steering) {
+      _steering = steering;
+      return Move(position, rotation, displacement, FloorHeight(position), _mapSize.TerrainSize2D);
+    }
 
     internal string GameTestProbe(Vector3 p, Quaternion r, Vector3 d) {
       float h = FloorHeight(p);

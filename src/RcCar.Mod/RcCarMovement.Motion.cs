@@ -12,9 +12,24 @@ namespace LouisPaulet.RcCar {
           RcCarMovementSettings.CarHalfExtents, stepDisplacement, _car!.transform,
           _worldQuery.IsDrivableSurfaceCollider, Physics.DefaultRaycastLayers,
           RcCarMovementSettings.CollisionSkinWidth, RcCarMovementSettings.MaxCollisionSlideIterations,
-          out bool collided,
-          rotation * Vector3.right * (_steering < -0.05f ? -1f : 1f),
-          RcCarMovementSettings.MinimumWallSlipRatio);
+          out bool collided);
+        if (collided) {
+          // A stair's landing initially looks like a wall to the horizontal sweep.
+          // Resolve a valid stair transition before introducing any sideways slip.
+          if (TryTraverseStairs(currentPosition, desiredPosition, rotation, supportHeight, mapSize, out Vector3 stairPosition)
+            && Vector3.Dot(stairPosition - currentPosition, stepDisplacement) > stepDisplacement.sqrMagnitude * 0.9f) {
+            currentPosition = stairPosition;
+            supportHeight = FloorHeight(currentPosition);
+            continue;
+          }
+          resolved = RcCarPhysics.MoveWithCollision(currentPosition, rotation,
+            RcCarMovementSettings.CarHalfExtents, stepDisplacement, _car!.transform,
+            _worldQuery.IsDrivableSurfaceCollider, Physics.DefaultRaycastLayers,
+            RcCarMovementSettings.CollisionSkinWidth, RcCarMovementSettings.MaxCollisionSlideIterations,
+            out collided,
+            rotation * Vector3.right * (_steering < -0.05f ? -1f : 1f),
+            RcCarMovementSettings.MinimumWallSlipRatio);
+        }
         if (!TryGetSupportedPosition(resolved, rotation, supportHeight, mapSize, false, out Vector3 grounded)) {
           if (!TryTraverseStairs(currentPosition, desiredPosition, rotation, supportHeight, mapSize, out grounded)) break;
           currentPosition = grounded; supportHeight = FloorHeight(currentPosition); continue;
