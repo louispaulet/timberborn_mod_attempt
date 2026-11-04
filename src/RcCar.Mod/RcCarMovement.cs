@@ -8,14 +8,32 @@ namespace LouisPaulet.RcCar {
     private readonly MapSize _mapSize;
     private readonly RcCarWorldQuery _worldQuery;
     private GameObject? _car;
+    private Transform[]? _frontWheels;
     private float _speed;
     private float _steering;
     public RcCarMovement(MapSize mapSize, RcCarWorldQuery worldQuery) {
       _mapSize = mapSize; _worldQuery = worldQuery;
     }
-    public void SetCar(GameObject car) => _car = car;
-    public void Stop() { _speed = 0f; _steering = 0f; }
-    public void Reset() { _car = null; Stop(); }
+    public void SetCar(GameObject car, Transform[] frontWheels) {
+      _car = car;
+      _frontWheels = frontWheels;
+    }
+    public void Stop() {
+      _speed = 0f;
+      _steering = 0f;
+      UpdateFrontWheels();
+    }
+    public void Reset() {
+      _car = null;
+      _frontWheels = null;
+      Stop();
+    }
+    private void UpdateFrontWheels() {
+      if (_frontWheels == null) return;
+      Quaternion rotation = Quaternion.AngleAxis(
+        _steering * RcCarMovementSettings.FrontWheelSteeringAngle, Vector3.up);
+      foreach (Transform wheel in _frontWheels) wheel.localRotation = rotation;
+    }
     public void Drive(Keyboard keyboard) {
       if (_car == null) {
         return;
@@ -43,6 +61,7 @@ namespace LouisPaulet.RcCar {
 
       float steeringInput = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
       _steering = Mathf.MoveTowards(_steering, steeringInput, RcCarMovementSettings.SteeringResponse * deltaTime);
+      UpdateFrontWheels();
       float speedRatio = Mathf.Clamp01(Mathf.Abs(_speed) / forwardSpeed);
       float reverseDirection = _speed < 0f ? -1f : 1f;
       float turnAngle = _steering * RcCarMovementSettings.TurnRate * speedRatio * reverseDirection * deltaTime;

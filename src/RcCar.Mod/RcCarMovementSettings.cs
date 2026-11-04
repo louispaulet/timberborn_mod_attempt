@@ -7,6 +7,7 @@ namespace LouisPaulet.RcCar {
     public const float Braking = 12f;
     public const float Coasting = 3f;
     public const float SteeringResponse = 5f;
+    public const float FrontWheelSteeringAngle = 28f;
     public const float TurnRate = 110f;
     public const float CarBlockHeight = 0.70f;
     public const int FlatGroundSearchStartRadius = 8;

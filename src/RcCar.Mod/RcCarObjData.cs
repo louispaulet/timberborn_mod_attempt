@@ -11,6 +11,7 @@ namespace LouisPaulet.RcCar {
   internal sealed class RcCarObjData {
     public readonly List<Vector3> Vertices = new();
     public readonly List<Vector3> Normals = new();
+    public readonly Dictionary<string, RcCarMaterialGroup> GroupsByName = new(System.StringComparer.Ordinal);
     public readonly List<RcCarMaterialGroup> Groups = new();
   }
 

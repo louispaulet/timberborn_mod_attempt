@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Timberborn.CameraSystem;
 using Timberborn.BlockSystem;
 using Timberborn.InputSystem;
@@ -17,8 +18,8 @@ namespace LouisPaulet.RcCar {
     private readonly RcCarSpawnFinder _spawnFinder;
     private readonly RcCarMovement _movement;
     private GameObject? _car;
-    private Mesh? _carMesh;
-    private Material[]? _carMaterials;
+    private readonly List<Mesh> _carMeshes = new();
+    private readonly List<Material> _carMaterials = new();
     private bool _isDriving = true;
     private bool _escapeRequested;
     private bool _spawnAttempted;
@@ -46,18 +47,7 @@ namespace LouisPaulet.RcCar {
     public void Unload() {
       _inputService.RemoveInputProcessor(this);
       InputSystem.onEvent -= OnInputSystemEvent;
-      if (_carMaterials != null) {
-        foreach (Material material in _carMaterials) {
-          if (material != null) {
-            Object.Destroy(material);
-          }
-        }
-        _carMaterials = null;
-      }
-      if (_carMesh != null) {
-        Object.Destroy(_carMesh);
-        _carMesh = null;
-      }
+      RcCarCarFactory.DestroyAssets(_carMeshes, _carMaterials);
       if (_car != null) {
         Object.Destroy(_car);
         _car = null;

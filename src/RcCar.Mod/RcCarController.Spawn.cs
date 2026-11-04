@@ -8,8 +8,8 @@ namespace LouisPaulet.RcCar {
         Debug.LogWarning("[LouisPaulet.RcCar] No safe dry, flat spawn cell was found. The RC car was not spawned.");
         return;
       }
-      if (!RcCarCarFactory.TryCreate(out _car, out _carMesh, out _carMaterials)) return;
-      _movement.SetCar(_car!);
+      if (!RcCarCarFactory.TryCreate(out _car, _carMeshes, _carMaterials, out Transform[] frontWheels)) return;
+      _movement.SetCar(_car!, frontWheels);
       _car!.transform.SetPositionAndRotation(spawnPosition, rotation);
       _cameraService.MoveTargetTo(spawnPosition);
       Debug.Log("[LouisPaulet.RcCar] Spawned the Iron Teeth RC car at " + spawnPosition + ".");
