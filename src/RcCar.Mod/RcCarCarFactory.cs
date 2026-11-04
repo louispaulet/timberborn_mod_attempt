@@ -6,9 +6,9 @@ using Object = UnityEngine.Object;
 namespace LouisPaulet.RcCar {
   internal static class RcCarCarFactory {
     public static bool TryCreate(out GameObject? car, List<Mesh> meshes, List<Material> materials,
-      out Transform[] frontWheels) {
+      out Transform[] wheels) {
       car = new GameObject("RC Car");
-      frontWheels = new Transform[2];
+      wheels = new Transform[4];
       car.AddComponent<BoxCollider>().size = RcCarMovementSettings.CarHalfExtents * 2f;
       GameObject visual = new GameObject("Iron Teeth RC Car model");
       visual.transform.SetParent(car.transform, false);
@@ -18,13 +18,15 @@ namespace LouisPaulet.RcCar {
       try {
         RcCarObjData[] parts = RcCarModel.Load();
         AddPart(visual, parts[0], Vector3.zero, meshes, materials);
-        for (int i = 0; i < frontWheels.Length; i++) {
+        for (int i = 0; i < wheels.Length; i++) {
           RcCarObjData wheel = parts[i + 1];
-          GameObject pivot = new GameObject(i == 0 ? "Front right wheel" : "Front left wheel");
+          string axle = i < 2 ? "Front" : "Rear";
+          string side = i % 2 == 0 ? "right" : "left";
+          GameObject pivot = new GameObject($"{axle} {side} wheel");
           pivot.transform.SetParent(visual.transform, false);
           pivot.transform.localPosition = WheelCenter(wheel);
           AddPart(pivot, wheel, pivot.transform.localPosition, meshes, materials);
-          frontWheels[i] = pivot.transform;
+          wheels[i] = pivot.transform;
         }
         return true;
       } catch (Exception exception) {
@@ -42,7 +44,10 @@ namespace LouisPaulet.RcCar {
         min = Vector3.Min(min, vertex);
         max = Vector3.Max(max, vertex);
       }
-      return (min + max) * 0.5f;
+      Vector3 center = (min + max) * 0.5f;
+      // The hardware extends past the outer sidewall. Steer around the tyre center.
+      center.x = Mathf.Sign(center.x) * 0.325f;
+      return center;
     }
 
     private static void AddPart(GameObject obj, RcCarObjData data, Vector3 pivot,
