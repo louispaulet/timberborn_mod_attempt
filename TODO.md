@@ -1,6 +1,6 @@
-# RC Car TODO
+# RC Car — Complete
 
-Movement, behavior, and regression checks are complete per user confirmation. Driving-mode feedback has been added.
+The full RC car TODO list is complete per user confirmation. Driving-mode feedback has been added.
 
 ## Current prototype
 
@@ -21,7 +21,7 @@ Movement, behavior, and regression checks are complete per user confirmation. Dr
 - Escape exited driving and V resumed it. The game log recorded each state change and no mod exceptions.
 - No bridge, building, or natural-obstacle scenario was available for direct live verification. Bridge support is limited to dry path cells with a physical deck collider at support height; ramps and stairs are not part of P0.
 
-## TODO, in priority order
+## Completed work
 
 ### P0 — Make movement grounded and safe
 
@@ -42,7 +42,7 @@ Movement, behavior, and regression checks are complete per user confirmation. Dr
 
 #### P1 live-test status
 
-- Test worlds: disposable `RcCarP1Verify-20261101` on the user's custom `flatmap`, disposable `RcCarP1Diorama-20261101`, and the reusable flatmap settlement `RcCarP1FlatTools-20261101` (Folktails, Timberborn `1.1.2.8`). The custom map source was left untouched. Use `flatmap` for the remaining live checks.
+- Test worlds: disposable `RcCarP1Verify-20261101` on the user's custom `flatmap`, disposable `RcCarP1Diorama-20261101`, and the reusable flatmap settlement `RcCarP1FlatTools-20261101` (Folktails, Timberborn `1.1.2.8`). The custom map source was left untouched. The `flatmap` was used for the live checks.
 - The user-built reusable flatmap save is `/Users/louispaulet/Documents/Timberborn/ExperimentalSaves/RcCarP1FlatTools-20261101/RcCarP1FlatTools-20261101 (2).timber`. It contains 28 completed path tiles: a 19-tile row at `(54..72, 52, 4)` and a 9-tile run at `(63, 53..61, 4)`, plus a completed `Stairs.Folktails` at `(63, 51, 4)` and platforms above it. The original `(3)` save was left unchanged during the code test.
 - The user opened developer mode with `Option+Shift+W` and saved the completed surfaces. The previous notes about unfinished construction sites and inaccessible instant-build controls no longer apply.
 - On flat dirt, a 2-second forward input moved the camera target from `(56.50, 4.36, 56.50)` to `(64.21, 4.36, 67.51)`, about 13.4 m. Forward, turning, and reverse inputs all moved the car in the live runs.
