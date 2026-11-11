@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using Timberborn.MapStateSystem;
 using LouisPaulet.RcCar.Core;
 
@@ -7,16 +6,18 @@ namespace LouisPaulet.RcCar {
   internal sealed partial class RcCarMovement {
     private readonly MapSize _mapSize;
     private readonly RcCarWorldQuery _worldQuery;
+    private readonly RcCarSupportChecker _support;
     private GameObject? _car;
     private Transform[]? _wheels;
     private float _wheelRoll;
     private float _speed;
     private float _steering;
     public RcCarMovement(MapSize mapSize, RcCarWorldQuery worldQuery) {
-      _mapSize = mapSize; _worldQuery = worldQuery;
+      _mapSize = mapSize; _worldQuery = worldQuery; _support = new RcCarSupportChecker(worldQuery);
     }
     public void SetCar(GameObject car, Transform[] wheels) {
       _car = car;
+      _support.SetCar(car);
       _wheels = wheels;
     }
     public void Stop() {
@@ -26,6 +27,7 @@ namespace LouisPaulet.RcCar {
     }
     public void Reset() {
       _car = null;
+      _support.SetCar(null);
       _wheels = null;
       _wheelRoll = 0f;
       Stop();
@@ -39,7 +41,7 @@ namespace LouisPaulet.RcCar {
       for (int i = 0; i < _wheels.Length; i++)
         _wheels[i].localRotation = i < 2 ? steering * roll : roll;
     }
-    public void Drive(Keyboard keyboard) {
+    public void Drive(float throttle, float steeringInput) {
       if (_car == null) {
         return;
       }
@@ -50,7 +52,6 @@ namespace LouisPaulet.RcCar {
       Vector2Int supportCell = new Vector2Int(Mathf.FloorToInt(currentPosition.x), Mathf.FloorToInt(currentPosition.z));
       RcCarSurface surface = _worldQuery.GetSurfaceAt(supportCell, Mathf.RoundToInt(supportHeight));
       float forwardSpeed = surface.ForwardSpeed;
-      float throttle = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
       float targetSpeed = throttle > 0f ? forwardSpeed : throttle < 0f ? -RcCarMovementSettings.ReverseSpeed : 0f;
       float acceleration = throttle == 0f
         ? RcCarMovementSettings.Coasting
@@ -64,7 +65,6 @@ namespace LouisPaulet.RcCar {
       }
       _speed = Mathf.MoveTowards(_speed, targetSpeed, acceleration * deltaTime);
 
-      float steeringInput = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
       _steering = Mathf.MoveTowards(_steering, steeringInput, RcCarMovementSettings.SteeringResponse * deltaTime);
       float speedRatio = Mathf.Clamp01(Mathf.Abs(_speed) / forwardSpeed);
       float reverseDirection = _speed < 0f ? -1f : 1f;

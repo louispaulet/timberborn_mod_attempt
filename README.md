@@ -80,6 +80,8 @@ make install
 
 ## RC Car Prototype
 
+The RC car mod groups its source into `Input`, `Movement`, `World`, and `Model`. The controller translates keyboard input into throttle and steering, while the support checker and shared footprint helper handle ground checks used by movement and spawning. Game-independent traversal rules live in `src/RcCar.Core`.
+
 `make install-rc-car` builds and installs the independent `RC Car Prototype` mod to `/Users/louispaulet/Documents/Timberborn/Mods/RcCar`. Its package includes `Code.dll` and the game-independent `RcCar.Core.dll`. The vehicle uses the Iron Teeth RC car v3 model, with a seated timber hood, steel body, green extract and red badwater cells, antenna, exposed gears, winch, and rear gauges. It supports terrain movement, collision checks, and path speed boosts.
 
 The runtime embeds `src/RcCar.Mod/Assets/IronTeethRcCar_V3.obj`; `RcCarMaterialStyles.cs` supplies Unity colors, metallicity, transparency, and emission. Blender's procedural grain and weathering are represented by solid material colors in the game. To re-export after editing the v3 `.blend`, run `scripts/export_rc_car_v3.py` through Blender MCP with that file open. The export includes visible vehicle geometry, evaluated modifiers, pipework, and lettering, and excludes the studio and superseded hidden parts. It preserves Blender axes because the runtime OBJ parser handles Unity conversion. The v2 files remain as design history.

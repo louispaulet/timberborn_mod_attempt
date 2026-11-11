@@ -4,7 +4,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace LouisPaulet.RcCar {
-  internal static class RcCarCarFactory {
+  internal static class RcCarFactory {
     public static bool TryCreate(out GameObject? car, List<Mesh> meshes, List<Material> materials,
       out Transform[] wheels) {
       car = new GameObject("RC Car");

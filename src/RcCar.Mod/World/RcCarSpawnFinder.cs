@@ -46,9 +46,9 @@ namespace LouisPaulet.RcCar {
 
     private bool IsSafeSpawnPosition(Vector3 position, Quaternion rotation, int supportHeight, Vector2Int mapSize) {
       for (int probeIndex = 0; probeIndex < 5; probeIndex++) {
-        Vector3 probe = GetFootprintProbe(position, rotation, probeIndex);
+        Vector3 probe = RcCarFootprint.GetFootprintProbe(position, rotation, probeIndex);
         Vector2Int cell = new Vector2Int(Mathf.FloorToInt(probe.x), Mathf.FloorToInt(probe.z));
-        if (!IsCellInsideMap(cell, mapSize)
+        if (!RcCarFootprint.IsCellInsideMap(cell, mapSize)
           || !_worldQuery.TryGetTopTerrainHeight(cell, out int cellHeight)
           || cellHeight != supportHeight
           || _worldQuery.IsUnderwaterAtSurface(cell, cellHeight)
@@ -72,19 +72,5 @@ namespace LouisPaulet.RcCar {
       return true;
     }
 
-    private static bool IsCellInsideMap(Vector2Int cell, Vector2Int mapSize) {
-      return cell.x >= 0 && cell.x < mapSize.x && cell.y >= 0 && cell.y < mapSize.y;
-    }
-
-    private static Vector3 GetFootprintProbe(Vector3 position, Quaternion rotation, int index) {
-      Vector3 offset = index switch {
-        1 => new Vector3(-RcCarMovementSettings.CarHalfExtents.x, 0f, -RcCarMovementSettings.CarHalfExtents.z),
-        2 => new Vector3(-RcCarMovementSettings.CarHalfExtents.x, 0f, RcCarMovementSettings.CarHalfExtents.z),
-        3 => new Vector3(RcCarMovementSettings.CarHalfExtents.x, 0f, -RcCarMovementSettings.CarHalfExtents.z),
-        4 => new Vector3(RcCarMovementSettings.CarHalfExtents.x, 0f, RcCarMovementSettings.CarHalfExtents.z),
-        _ => Vector3.zero,
-      };
-      return position + rotation * offset;
-    }
   }
 }
